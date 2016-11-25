@@ -45,23 +45,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Completed\Scripts\BoardManager.cs" />
-     <Compile Include="Assets\Completed\Scripts\Enemy.cs" />
-     <Compile Include="Assets\Completed\Scripts\GameManager.cs" />
-     <Compile Include="Assets\Completed\Scripts\Loader.cs" />
-     <Compile Include="Assets\Completed\Scripts\MovingObject.cs" />
-     <Compile Include="Assets\Completed\Scripts\Player.cs" />
-     <Compile Include="Assets\Completed\Scripts\SoundManager.cs" />
-     <Compile Include="Assets\Completed\Scripts\Wall.cs" />
+     <Compile Include="Assets\Scripts\BoardGeneration\BoardCreator.cs" />
+     <Compile Include="Assets\Scripts\BoardGeneration\Corridor.cs" />
+     <Compile Include="Assets\Scripts\BoardGeneration\Room.cs" />
      <Compile Include="Assets\Scripts\BoardManager.cs" />
-     <Compile Include="Assets\Scripts\Enemy.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
-     <Compile Include="Assets\Scripts\InteractableObject.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\InteractableObject.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\Enemy.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\MovingObject.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\Player.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\Wall.cs" />
      <Compile Include="Assets\Scripts\Loader.cs" />
-     <Compile Include="Assets\Scripts\MovingObject.cs" />
-     <Compile Include="Assets\Scripts\Player.cs" />
-     <Compile Include="Assets\Scripts\SoundManager.cs" />
-     <Compile Include="Assets\Scripts\Wall.cs" />
+     <Compile Include="Assets\Scripts\Utilities\CameraController.cs" />
+     <Compile Include="Assets\Scripts\Utilities\IntRange.cs" />
+     <Compile Include="Assets\Scripts\Utilities\SoundManager.cs" />
      <Compile Include="Assets\TutorialInfo\Scripts\TutorialInfo.cs" />
      <None Include="Assets\TutorialInfo\Fonts\LICENSE.txt" />
      <None Include="Assets\Fonts\OFL.txt" />

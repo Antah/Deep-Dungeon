@@ -9,9 +9,10 @@ public class GameManager : MonoBehaviour {
 	public float levelStartDelay = 2f;
 	public float turnDelay = 0.1f;
 	public static GameManager instance = null;
-	public BoardManager boardScript;
+	public BoardCreator boardScript;
 	public int playerFoodPoints = 100;
 	[HideInInspector] public bool playersTurn = true;
+	public Text foodText = null;
 
 	private Text levelText;
 	private GameObject levelImage;
@@ -29,7 +30,7 @@ public class GameManager : MonoBehaviour {
 
 		DontDestroyOnLoad (gameObject);
 		enemies = new List<Enemy> ();
-		boardScript = GetComponent<BoardManager> ();
+		boardScript = GetComponent<BoardCreator> ();
 		InitGame ();
 	}
 
