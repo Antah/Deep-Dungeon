@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using UnityEngine;
+using System.Collections.Generic;
+using Random = UnityEngine.Random;
 
 public class BoardCreator : MonoBehaviour
 {
 	// The type of tile that will be laid in a specific position.
 	public enum TileType
 	{
-		Wall, Floor,
+		Wall, Room, Corridor, Empty
 	}
 
 
@@ -26,6 +28,10 @@ public class BoardCreator : MonoBehaviour
 	private Corridor[] corridors;                             // All the corridors that connect the rooms.
 	private GameObject boardHolder;                           // GameObject that acts as a container for all other tiles.
 
+	public IntRange numEnemies;
+	public IntRange numFood;
+	private List<Vector3> gridPositions = new List<Vector3>();
+
 
 	public void SetupScene(int level){
 		BoardSetup();
@@ -35,6 +41,8 @@ public class BoardCreator : MonoBehaviour
 	{
 		// Create the board holder.
 		boardHolder = new GameObject("BoardHolder");
+
+		gridPositions.Clear ();
 
 		SetupTilesArray ();
 
@@ -58,6 +66,10 @@ public class BoardCreator : MonoBehaviour
 		{
 			// ... and set each tile array is the correct height.
 			tiles[i] = new TileType[rows];
+			for (int j = 0; j < tiles[i].Length; j++)
+			{
+				tiles[i][j] = TileType.Empty;
+			}
 		}
 	}
 
@@ -114,20 +126,53 @@ public class BoardCreator : MonoBehaviour
 		// Go through all the rooms...
 		for (int i = 0; i < rooms.Length; i++)
 		{
+			int xCoord, yCoord;
+
 			Room currentRoom = rooms[i];
+
+			yCoord = currentRoom.yPos - 1;
+			for (int j = -1; j < currentRoom.roomWidth + 1; j++) {
+				xCoord = currentRoom.xPos + j;
+				Debug.Log (xCoord + " " + yCoord, gameObject);
+				if(tiles[xCoord][yCoord] != TileType.Room)
+					tiles[xCoord][yCoord] = TileType.Wall;
+			}
+
+			yCoord = currentRoom.yPos + currentRoom.roomHeight;
+			for (int j = -1; j < currentRoom.roomWidth + 1; j++) {
+				xCoord = currentRoom.xPos + j;
+				if(tiles[xCoord][yCoord] != TileType.Room)
+					tiles[xCoord][yCoord] = TileType.Wall;
+			}
+
+			xCoord = currentRoom.xPos - 1 ;
+			for (int j = 0; j < currentRoom.roomHeight + 1; j++) {
+				yCoord = currentRoom.yPos + j;
+				if(tiles[xCoord][yCoord] != TileType.Room)
+					tiles[xCoord][yCoord] = TileType.Wall;
+			}
+
+			xCoord = currentRoom.xPos + currentRoom.roomWidth;
+			for (int j = 0; j < currentRoom.roomHeight + 1; j++) {
+				yCoord = currentRoom.yPos + j;
+				if(tiles[xCoord][yCoord] != TileType.Room)
+					tiles[xCoord][yCoord] = TileType.Wall;
+			}
 
 			// ... and for each room go through it's width.
 			for (int j = 0; j < currentRoom.roomWidth; j++)
 			{
-				int xCoord = currentRoom.xPos + j;
+				xCoord = currentRoom.xPos + j;
 
 				// For each horizontal tile, go up vertically through the room's height.
 				for (int k = 0; k < currentRoom.roomHeight; k++)
 				{
-					int yCoord = currentRoom.yPos + k;
+					yCoord = currentRoom.yPos + k;
 
 					// The coordinates in the jagged array are based on the room's position and it's width and height.
-					tiles[xCoord][yCoord] = TileType.Floor;
+					tiles[xCoord][yCoord] = TileType.Room;
+
+					gridPositions.Add(new Vector3(xCoord, yCoord, 0f));
 				}
 			}
 		}
@@ -154,20 +199,37 @@ public class BoardCreator : MonoBehaviour
 				{
 				case Direction.North:
 					yCoord += j;
+					if(tiles[xCoord - 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord - 1][yCoord] = TileType.Wall;
+					if(tiles[xCoord + 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord + 1][yCoord] = TileType.Wall;
 					break;
 				case Direction.East:
 					xCoord += j;
+					if(tiles[xCoord][yCoord - 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord][yCoord - 1] = TileType.Wall;
+					if(tiles[xCoord][yCoord + 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord][yCoord + 1] = TileType.Wall;
 					break;
 				case Direction.South:
 					yCoord -= j;
+					if(tiles[xCoord - 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord - 1][yCoord] = TileType.Wall;
+					if(tiles[xCoord + 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord + 1][yCoord] = TileType.Wall;
 					break;
 				case Direction.West:
 					xCoord -= j;
+					if(tiles[xCoord][yCoord - 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord][yCoord - 1] = TileType.Wall;
+					if(tiles[xCoord][yCoord + 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+						tiles[xCoord][yCoord + 1] = TileType.Wall;
 					break;
 				}
 
 				// Set the tile at these coordinates to Floor.
-				tiles[xCoord][yCoord] = TileType.Floor;
+				if(tiles[xCoord][yCoord] != TileType.Room)
+					tiles[xCoord][yCoord] = TileType.Corridor;
 			}
 		}
 	}
@@ -181,13 +243,15 @@ public class BoardCreator : MonoBehaviour
 			for (int j = 0; j < tiles[i].Length; j++)
 			{
 				// ... and instantiate a floor tile for it.
-				InstantiateFromArray (floorTiles, i, j);
+				if(tiles[i][j] != TileType.Empty && tiles[i][j] != TileType.Wall)
+					InstantiateFromArray (floorTiles, i, j);
 
 				// If the tile type is Wall...
 				if (tiles[i][j] == TileType.Wall)
 				{
+					Debug.Log ("Hello", gameObject);
 					// ... instantiate a wall over the top.
-					InstantiateFromArray (wallTiles, i, j);
+					InstantiateFromArray (outerWallTiles, i, j);
 				}
 			}
 		}
@@ -257,5 +321,34 @@ public class BoardCreator : MonoBehaviour
 
 		// Set the tile's parent to the board holder.
 		tileInstance.transform.parent = boardHolder.transform;
+	}
+
+
+	// Losowe rozmieszczenie przeciwników/jedzenia
+	void InitialiseList(){
+		gridPositions.Clear ();
+
+		for( int x = 1; x < columns - 1; x++){
+			for(int y = 1; y < rows - 1; y++){
+				gridPositions.Add(new Vector3(x, y, 0f));
+			}
+		}
+	}
+
+	Vector3 RandomPosition(){
+		int randomIndex = Random.Range (0, gridPositions.Count);
+		Vector3 randomPosition = gridPositions [randomIndex];
+		gridPositions.RemoveAt (randomIndex);
+		return randomPosition;
+	}
+
+	void LayoutObjectAtRandom(GameObject[] tileArray, int min, int max){
+		int objectCount = Random.Range (min, max+1);
+
+		for(int i = 0; i < objectCount; i++){
+			Vector3 randomPosition = RandomPosition ();
+			GameObject tileChoice = tileArray [Random.Range (0, tileArray.Length)];
+			Instantiate (tileChoice, randomPosition, Quaternion.identity);
+		}
 	}
 }

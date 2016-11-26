@@ -38,7 +38,7 @@ public class Room
 		case Direction.North:
 			// ... the height of the room mustn't go beyond the board so it must be clamped based
 			// on the height of the board (rows) and the end of corridor that leads to the room.
-			roomHeight = Mathf.Clamp(roomHeight, 1, rows - corridor.EndPositionY);
+			roomHeight = Mathf.Clamp(roomHeight, 1, rows - corridor.EndPositionY - 1);
 
 			// The y coordinate of the room must be at the end of the corridor (since the corridor leads to the bottom of the room).
 			yPos = corridor.EndPositionY;
@@ -48,28 +48,28 @@ public class Room
 			xPos = Random.Range (corridor.EndPositionX - roomWidth + 1, corridor.EndPositionX);
 
 			// This must be clamped to ensure that the room doesn't go off the board.
-			xPos = Mathf.Clamp (xPos, 0, columns - roomWidth);
+			xPos = Mathf.Clamp (xPos, 1, columns - roomWidth - 1);
 			break;
 		case Direction.East:
-			roomWidth = Mathf.Clamp(roomWidth, 1, columns - corridor.EndPositionX);
+			roomWidth = Mathf.Clamp(roomWidth, 1, columns - corridor.EndPositionX - 1);
 			xPos = corridor.EndPositionX;
 
 			yPos = Random.Range (corridor.EndPositionY - roomHeight + 1, corridor.EndPositionY);
-			yPos = Mathf.Clamp (yPos, 0, rows - roomHeight);
+			yPos = Mathf.Clamp (yPos, 1, rows - roomHeight - 1);
 			break;
 		case Direction.South:
-			roomHeight = Mathf.Clamp (roomHeight, 1, corridor.EndPositionY);
+			roomHeight = Mathf.Clamp (roomHeight, 1, corridor.EndPositionY - 1);
 			yPos = corridor.EndPositionY - roomHeight + 1;
 
 			xPos = Random.Range (corridor.EndPositionX - roomWidth + 1, corridor.EndPositionX);
-			xPos = Mathf.Clamp (xPos, 0, columns - roomWidth);
+			xPos = Mathf.Clamp (xPos, 1, columns - roomWidth - 1);
 			break;
 		case Direction.West:
-			roomWidth = Mathf.Clamp (roomWidth, 1, corridor.EndPositionX);
+			roomWidth = Mathf.Clamp (roomWidth, 1, corridor.EndPositionX - 1);
 			xPos = corridor.EndPositionX - roomWidth + 1;
 
 			yPos = Random.Range (corridor.EndPositionY - roomHeight + 1, corridor.EndPositionY);
-			yPos = Mathf.Clamp (yPos, 0, rows - roomHeight);
+			yPos = Mathf.Clamp (yPos, 1, rows - roomHeight - 1);
 			break;
 		}
 	}
