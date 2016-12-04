@@ -87,7 +87,8 @@ public class Player : MovingObject {
 			Enemy hitEnemy = hitObject as Enemy;
 			hitEnemy.DamageEnemy (enemyDamage);
 		}
-		animator.SetTrigger ("playerChop");
+		if(hitObject is Enemy || hitObject is Wall)
+			animator.SetTrigger ("playerChop");
 	}
 
 	private void Restart(){

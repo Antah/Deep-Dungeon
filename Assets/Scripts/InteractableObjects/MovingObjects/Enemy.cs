@@ -5,10 +5,11 @@ public class Enemy : MovingObject {
 
 	public int playerDamage;
 	public int hp = 2;
+	public int skipChance = 30;
 
 	private Animator animator;
 	private Transform target;
-	private bool skipMove;
+	private int distanceToTarget;
 
 	public AudioClip enemyAttack1;
 	public AudioClip enemyAttack2;
@@ -18,29 +19,70 @@ public class Enemy : MovingObject {
 		GameManager.instance.AddEnemyToList (this);
 		animator = GetComponent<Animator> ();
 		target = GameObject.FindGameObjectWithTag ("Player").transform;
+		wallDamage = 2;
 		base.Start();
 	}
 
-	protected override void AttemptMove(int xDir,int yDir){
-		if (skipMove) {
-			skipMove = false;
-			return;
-		}
+	public bool MoveEnemy(){
+		if (IsWaiting ())
+			return false;
 
-		base.AttemptMove(xDir, yDir);
-
-		skipMove = true;
-	}
-
-	public void MoveEnemy(){
 		int xDir = 0, yDir = 0;
+		GetDistanceToTarget ();
 
-		if (Mathf.Abs (target.position.x - transform.position.x) < float.Epsilon)
-			yDir = target.position.y > transform.position.y ? 1 : -1;
-		else 
-			xDir = target.position.x > transform.position.x ? 1 : -1;
+		if (distanceToTarget > 16)
+			moveTime = 0.02f;
 
 		AttemptMove (xDir, yDir);
+		return true;
+	}
+
+	protected override void AttemptMove (int xDir, int yDir){
+		if (distanceToTarget > 16) {
+			xDir = Random.Range (-1, 1);
+			if (xDir == 0)
+				yDir = Random.Range (-1, 1);
+		} else {
+			moveTime = 0.1f;	
+			if (Mathf.Abs (target.position.x - transform.position.x) < Mathf.Abs (target.position.y - transform.position.y) )
+				yDir = target.position.y > transform.position.y ? 1 : -1;
+			else
+				xDir = target.position.x > transform.position.x ? 1 : -1;
+		}
+
+		if (Stuck (xDir, yDir)) {
+			if(yDir == 0){
+				yDir = target.position.y > transform.position.y ? 1 : -1;
+				xDir = 0;
+			} else {
+				xDir = target.position.x > transform.position.x ? 1 : -1;
+				yDir = 0;
+			}
+				
+			if(Stuck(xDir, yDir)){
+				xDir = Random.Range (-1, 1);
+				if (xDir == 0)
+					yDir = Random.Range (-1, 1);
+				Stuck(xDir, yDir);
+			}
+		}
+	}
+
+	private bool Stuck(int xDir, int yDir){
+		RaycastHit2D hit;
+		bool canMove = Move (xDir, yDir, out hit);
+
+		if (hit.transform == null)
+			return false;
+
+		InteractableObject hitObject = hit.transform.GetComponent (typeof(InteractableObject)) as InteractableObject;
+
+		if (!canMove && hitObject != null) {
+			if (hitObject is OuterWall || hitObject is Enemy)
+				return true;
+			Interact (hitObject);
+		}
+		return false;
 	}
 
 	protected override void Interact(InteractableObject hitObject){
@@ -49,12 +91,28 @@ public class Enemy : MovingObject {
 			Player hitPlayer = hitObject as Player;
 			hitPlayer.LoseFood (playerDamage);
 		}
-		animator.SetTrigger ("enemyAttack");
+		if(hitObject is Player || hitObject is Wall)
+			animator.SetTrigger ("enemyAttack");
 	}
 
 	public void DamageEnemy(int loss){
 		hp -= loss;
 		if (hp <= 0)
 			GameObject.Destroy (gameObject);
+	}
+
+	private void GetDistanceToTarget(){
+		distanceToTarget = (int)(Mathf.Abs (target.position.x - transform.position.x) + Mathf.Abs (target.position.y - transform.position.y));
+	}
+
+	private bool IsWaiting(){
+		int random = Random.Range (0, 100);
+		if (random + 1 < skipChance)
+			return true;
+		return false;
+	}
+
+	protected override void MakeMove(Vector2 end){
+		transform.position = end;
 	}
 }

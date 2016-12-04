@@ -54,6 +54,7 @@
      <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\Enemy.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\MovingObject.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\Player.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\OuterWall.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\Wall.cs" />
      <Compile Include="Assets\Scripts\Loader.cs" />
      <Compile Include="Assets\Scripts\Utilities\CameraController.cs" />

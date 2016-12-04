@@ -4,7 +4,7 @@ using System.Collections;
 public class Wall : InteractableObject {
 
 	public Sprite dmgSprite;
-	public int hp = 4;
+	public int hp = 3;
 
 	public AudioClip chopSound1, chopSound2;
 

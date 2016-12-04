@@ -9,13 +9,11 @@ public abstract class MovingObject : InteractableObject {
 
 	private BoxCollider2D boxCollider;
 	private Rigidbody2D rb2D;
-	private float inverseMoveTime;
 
 	// Use this for initialization
 	protected virtual void Start () {
 		boxCollider = GetComponent<BoxCollider2D> ();
 		rb2D = GetComponent<Rigidbody2D> ();
-		inverseMoveTime = 1f / moveTime;
 	}
 
 	protected bool Move(int xDir, int yDir, out RaycastHit2D hit){
@@ -27,7 +25,7 @@ public abstract class MovingObject : InteractableObject {
 		boxCollider.enabled = true;
 
 		if(hit.transform == null){
-			StartCoroutine (SmoothMovement (end));
+			MakeMove (end);
 			return true;
 		}
 		return false;
@@ -54,11 +52,15 @@ public abstract class MovingObject : InteractableObject {
 		}
 	}
 
+	protected virtual void MakeMove(Vector2 end){
+		StartCoroutine (SmoothMovement (end));
+	}
+
 	protected IEnumerator SmoothMovement(Vector3 end){
 		float sqrRemainingDistance = (transform.position - end).sqrMagnitude;
 
 		while (sqrRemainingDistance > float.Epsilon) {
-			Vector3 newPosition = Vector3.MoveTowards (rb2D.position, end, inverseMoveTime * Time.deltaTime);
+			Vector3 newPosition = Vector3.MoveTowards (rb2D.position, end, 1f / moveTime * Time.deltaTime);
 			rb2D.MovePosition (newPosition);
 			sqrRemainingDistance = (transform.position - end).sqrMagnitude;
 			yield return null;
