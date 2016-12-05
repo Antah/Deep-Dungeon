@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour {
 	private GameObject levelImage;
 	private bool doingSetup;
 	private int level = 1;
+	public Player player;
 	private List<Enemy> enemies;
 	private bool enemiesMoving;
 
@@ -29,6 +30,7 @@ public class GameManager : MonoBehaviour {
 			Destroy (gameObject);
 
 		DontDestroyOnLoad (gameObject);
+
 		enemies = new List<Enemy> ();
 		boardScript = GetComponent<BoardCreator> ();
 		InitGame ();
@@ -48,10 +50,12 @@ public class GameManager : MonoBehaviour {
 
 		levelImage = GameObject.Find ("LevelImage");
 		levelText = GameObject.Find ("LevelText").GetComponent<Text> ();
-		levelText.text = "Day " + level;
+		levelText.text = "Level " + level;
 		levelImage.SetActive(true);
 		Invoke ("HideLevelImage", levelStartDelay);
 
+		foodText = GameObject.Find ("FoodText").GetComponent<Text> ();
+		player = GameObject.Find ("Player").GetComponent<Player> ();
 		enemies.Clear ();
 		boardScript.SetupScene (level);
 	}
@@ -94,5 +98,17 @@ public class GameManager : MonoBehaviour {
 			
 		playersTurn = true;
 		enemiesMoving = false;
+	}
+
+	public void NextLevel(){
+		SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
+	}
+
+	public Player GetPlayer(){
+		return player;
+	}
+
+	public void SetFoodText(int text){
+		foodText.text = "Food: " + text;
 	}
 }

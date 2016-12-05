@@ -9,7 +9,7 @@ public class Player : MovingObject {
 	public int pointsPerFood = 10;
 	public int pointsPerSoda = 20;
 	public float restartLevelDelay = 1f;
-	public Text foodText;
+	public static Player instance = null;
 
 	public AudioClip moveSound1;
 	public AudioClip moveSound2;
@@ -27,9 +27,7 @@ public class Player : MovingObject {
 		animator = GetComponent<Animator> ();
 
 		food = GameManager.instance.playerFoodPoints;
-
-		foodText = GameManager.instance.foodText;
-		foodText.text = "Food: " + food;
+		GameManager.instance.SetFoodText(food);
 
 		base.Start ();
 	}
@@ -57,7 +55,7 @@ public class Player : MovingObject {
 
 	protected override void AttemptMove (int xDir, int yDir){
 		food--;
-		foodText.text = "Food: " + food;
+		GameManager.instance.SetFoodText(food);
 
 		base.AttemptMove(xDir, yDir);
 
@@ -72,11 +70,11 @@ public class Player : MovingObject {
 			enabled = false;
 		} else if (other.tag == "Food") {
 			food += pointsPerFood;
-			foodText.text = "Food: " + food;
+			GameManager.instance.SetFoodText(food);
 			other.gameObject.SetActive (false);
 		} else if (other.tag == "Soda") {
 			food += pointsPerSoda;
-			foodText.text = "Food: " + food;
+			GameManager.instance.SetFoodText(food);
 			other.gameObject.SetActive (false);
 		}
 	}
@@ -92,13 +90,14 @@ public class Player : MovingObject {
 	}
 
 	private void Restart(){
-		SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+		//SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+		GameManager.instance.NextLevel ();
 	}
 
 	public void LoseFood (int loss){
 		animator.SetTrigger ("playerHit");
 		food -= loss;
-		foodText.text = "Food: " + food;
+		GameManager.instance.SetFoodText(food);
 		CheckIfGameOver();
 	}
 

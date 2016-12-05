@@ -9,16 +9,20 @@ public class BoardCreator : MonoBehaviour
 	// The type of tile that will be laid in a specific position.
 	public enum TileType
 	{
-		Wall, Room, Corridor, Empty
+		Wall, Room, Corridor, Empty, Occupied
 	}
 
 	public int columns = 100;                                 // The number of columns on the board (how wide it will be).
 	public int rows = 100;                                    // The number of rows on the board (how tall it will be).
 
-	public IntRange numRooms = new IntRange (15, 20);         // The range of the number of rooms there can be.
-	public IntRange roomWidth = new IntRange (3, 10);         // The range of widths rooms can have.
-	public IntRange roomHeight = new IntRange (3, 10);        // The range of heights rooms can have.
-	public IntRange corridorLength = new IntRange (6, 10);    // The range of lengths corridors between rooms can have.
+	public IntRange numRooms = new IntRange (5, 10);         // The range of the number of rooms there can be.
+	public IntRange roomWidth = new IntRange (2, 8);         // The range of widths rooms can have.
+	public IntRange roomHeight = new IntRange (2, 8);        // The range of heights rooms can have.
+	public IntRange corridorLength = new IntRange (3, 6);    // The range of lengths corridors between rooms can have.
+
+	public IntRange startingRoomRange = new IntRange (1, 2);
+	public IntRange exitRoomRange = new IntRange (6, 10);
+	private int startingRoom, exitRoom;
 
 	public IntRange enemiesPerRoom = new IntRange (0, 2);
 	public IntRange rubblePerRoom = new IntRange (2, 8);
@@ -29,7 +33,7 @@ public class BoardCreator : MonoBehaviour
 	public GameObject[] outerWallTiles;                       // An array of outer wall tile prefabs.
 	public GameObject[] enemyTiles;
 	public GameObject[] foodTiles;
-	public GameObject player;
+	public GameObject exit;
 
 	private TileType[][] tiles;                               // A jagged array of tile types representing the board, like a grid.
 	private Room[] rooms;                                     // All the rooms that are created for this board.
@@ -51,6 +55,9 @@ public class BoardCreator : MonoBehaviour
 		boardHolder = new GameObject("BoardHolder");
 
 		gridPositions.Clear ();
+
+		startingRoom = startingRoomRange.Random;
+		exitRoom = exitRoomRange.Random;
 
 		SetupTilesArray ();
 
@@ -85,10 +92,13 @@ public class BoardCreator : MonoBehaviour
 	void CreateRoomsAndCorridors ()
 	{
 		// Create the rooms array with a random size.
-		rooms = new Room[numRooms.Random];
+		int randomNumRooms = numRooms.Random;
+		rooms = new Room[randomNumRooms];
 
+		if (exitRoom > randomNumRooms) 
+			exitRoom = randomNumRooms;
 		// There should be one less corridor than there is rooms.
-		corridors = new Corridor[rooms.Length - 1];
+		corridors = new Corridor[randomNumRooms - 1];
 
 		// Create the first room and corridor.
 		rooms[0] = new Room ();
@@ -96,7 +106,11 @@ public class BoardCreator : MonoBehaviour
 
 		// Setup the first room, there is no previous corridor so we do not use one.
 		rooms[0].SetupRoom(roomWidth, roomHeight, columns, rows);
-
+		if (startingRoom == 1) {
+			Vector3 playerPos = new Vector3 (rooms[0].xPos, rooms[0].yPos, 0);
+			ClearSpace(playerPos, 0.1f);
+			GameManager.instance.GetPlayer().transform.position = playerPos;
+		}
 		// Setup the first corridor using the first room.
 		corridors[0].SetupCorridor(rooms[0], corridorLength, roomWidth, roomHeight, columns, rows, true);
 
@@ -118,11 +132,21 @@ public class BoardCreator : MonoBehaviour
 				corridors[i].SetupCorridor(rooms[i], corridorLength, roomWidth, roomHeight, columns, rows, false);
 			}
 
-			if (i == 2)
+			if (i == startingRoom - 1)
 			{
-				Debug.Log ("Hello", gameObject);
 				Vector3 playerPos = new Vector3 (rooms[i].xPos, rooms[i].yPos, 0);
-				player.transform.position = playerPos;
+				if(ClearSpace(playerPos, 0.1f))
+					playerPos = new Vector3 (rooms[i].xPos, rooms[i].yPos + 1, 0);
+				GameManager.instance.GetPlayer().transform.position = playerPos;
+			}
+
+			if (i == exitRoom - 1)
+			{
+				Vector3 exitPos = new Vector3 (rooms[i].xPos, rooms[i].yPos , 0);
+				if(ClearSpace(exitPos, 0.1f))
+					exitPos = new Vector3 (rooms[i].xPos + 1, rooms[i].yPos , 0);
+				GameObject tileInstance = Instantiate (exit, exitPos, Quaternion.identity) as GameObject;
+				tileInstance.transform.parent = boardHolder.transform;
 			}
 		}
 
@@ -143,7 +167,6 @@ public class BoardCreator : MonoBehaviour
 			yCoord = currentRoom.yPos - 1;
 			for (int j = -1; j < currentRoom.roomWidth + 1; j++) {
 				xCoord = currentRoom.xPos + j;
-				Debug.Log (xCoord + " " + yCoord, gameObject);
 				if(tiles[xCoord][yCoord] != TileType.Room)
 					tiles[xCoord][yCoord] = TileType.Wall;
 			}
@@ -207,30 +230,30 @@ public class BoardCreator : MonoBehaviour
 				{
 				case Direction.North:
 					yCoord += j;
-					if(tiles[xCoord - 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord - 1][yCoord] != TileType.Room && tiles[xCoord - 1][yCoord] != TileType.Corridor)
 						tiles[xCoord - 1][yCoord] = TileType.Wall;
-					if(tiles[xCoord + 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord + 1][yCoord] != TileType.Room && tiles[xCoord + 1][yCoord] != TileType.Corridor)
 						tiles[xCoord + 1][yCoord] = TileType.Wall;
 					break;
 				case Direction.East:
 					xCoord += j;
-					if(tiles[xCoord][yCoord - 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord][yCoord - 1] != TileType.Room && tiles[xCoord][yCoord - 1] != TileType.Corridor)
 						tiles[xCoord][yCoord - 1] = TileType.Wall;
-					if(tiles[xCoord][yCoord + 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord][yCoord + 1] != TileType.Room && tiles[xCoord][yCoord + 1] != TileType.Corridor)
 						tiles[xCoord][yCoord + 1] = TileType.Wall;
 					break;
 				case Direction.South:
 					yCoord -= j;
-					if(tiles[xCoord - 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord - 1][yCoord] != TileType.Room && tiles[xCoord - 1][yCoord] != TileType.Corridor)
 						tiles[xCoord - 1][yCoord] = TileType.Wall;
-					if(tiles[xCoord + 1][yCoord] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord + 1][yCoord] != TileType.Room && tiles[xCoord + 1][yCoord] != TileType.Corridor)
 						tiles[xCoord + 1][yCoord] = TileType.Wall;
 					break;
 				case Direction.West:
 					xCoord -= j;
-					if(tiles[xCoord][yCoord - 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord][yCoord - 1] != TileType.Room && tiles[xCoord][yCoord - 1] != TileType.Corridor)
 						tiles[xCoord][yCoord - 1] = TileType.Wall;
-					if(tiles[xCoord][yCoord + 1] != TileType.Room && tiles[xCoord][yCoord] != TileType.Corridor)
+					if(tiles[xCoord][yCoord + 1] != TileType.Room && tiles[xCoord][yCoord + 1] != TileType.Corridor)
 						tiles[xCoord][yCoord + 1] = TileType.Wall;
 					break;
 				}
@@ -257,7 +280,6 @@ public class BoardCreator : MonoBehaviour
 				// If the tile type is Wall...
 				if (tiles[i][j] == TileType.Wall)
 				{
-					Debug.Log ("Hello", gameObject);
 					// ... instantiate a wall over the top.
 					InstantiateFromArray (outerWallTiles, i, j);
 				}
@@ -332,6 +354,18 @@ public class BoardCreator : MonoBehaviour
 		tileInstance.transform.parent = boardHolder.transform;
 	}
 
+	void InstantiateFromArray (GameObject[] prefabs, Vector3 position)
+	{
+		// Create a random index for the array.
+		int randomIndex = Random.Range(0, prefabs.Length);
+
+		// Create an instance of the prefab from the random index of the array.
+		GameObject tileInstance = Instantiate(prefabs[randomIndex], position, Quaternion.identity) as GameObject;
+
+		// Set the tile's parent to the board holder.
+		tileInstance.transform.parent = boardHolder.transform;
+	}
+
 
 	// Losowe rozmieszczenie przeciwników/jedzenia
 	Vector3 RandomPosition(){
@@ -348,8 +382,11 @@ public class BoardCreator : MonoBehaviour
 			if (gridPositions.Count == 0)
 				break;
 			Vector3 randomPosition = RandomPosition ();
-			GameObject tileChoice = tileArray [Random.Range (0, tileArray.Length)];
-			Instantiate (tileChoice, randomPosition, Quaternion.identity);
+			if (CheckForColliders (randomPosition, 0.1f)) {
+				i--;
+				continue;
+			}
+			InstantiateFromArray (tileArray, randomPosition);
 		}
 	}
 
@@ -361,5 +398,22 @@ public class BoardCreator : MonoBehaviour
 		LayoutObjectAtRandom (room, enemyTiles, enemiesPerRoom, enemiesCountScaling);
 
 		//Instantiate (exit, new Vector3 (columns - 1, rows - 1, 0f), Quaternion.identity);
+	}
+
+	bool CheckForColliders(Vector2 center, float radius) {
+		Collider2D[] hitColliders = Physics2D.OverlapCircleAll(center, radius);
+		if (hitColliders.Length > 0)
+			return true;
+		return false;
+	}
+	
+	bool ClearSpace(Vector2 center, float radius) {
+		Collider2D[] hitColliders = Physics2D.OverlapCircleAll(center, radius);
+		for (int i = 0; i < hitColliders.Length; i++) {
+			if(hitColliders[i].name == "Player" || hitColliders[i].name == "Exit")
+				return false;
+			Destroy (hitColliders [i].gameObject);
+		}
+		return true;
 	}
 }

@@ -3,7 +3,7 @@ using System.Collections;
 
 public class Wall : InteractableObject {
 
-	public Sprite dmgSprite;
+	public Sprite dmgSprite1, dmgSprite2;
 	public int hp = 3;
 
 	public AudioClip chopSound1, chopSound2;
@@ -17,8 +17,14 @@ public class Wall : InteractableObject {
 
 	public void DamageWall(int loss){
 		SoundManager.instance.RandomizeSfx(chopSound1, chopSound2);
-		spriteRenderer.sprite = dmgSprite;
+
 		hp -= loss;
+
+		if(hp == 2)
+			spriteRenderer.sprite = dmgSprite1;
+		if(hp == 1)
+			spriteRenderer.sprite = dmgSprite2;
+		
 		if (hp <= 0)
 			gameObject.SetActive (false);
 	}
