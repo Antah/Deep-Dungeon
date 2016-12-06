@@ -9,7 +9,7 @@ public class Player : MovingObject {
 	public int pointsPerFood = 10;
 	public int pointsPerSoda = 20;
 	public float restartLevelDelay = 1f;
-	public static Player instance = null;
+	public int food;
 
 	public AudioClip moveSound1;
 	public AudioClip moveSound2;
@@ -20,7 +20,7 @@ public class Player : MovingObject {
 	public AudioClip gameOverSound;
 
 	private Animator animator;
-	public int food;
+	private Vector2 touchOrigin = -Vector2.one;
 
 	// Use this for initialization
 	protected override void Start () {
@@ -41,16 +41,37 @@ public class Player : MovingObject {
 		if (!GameManager.instance.playersTurn)
 			return;
 
-		int horizontal = 0, verical = 0;
+		int horizontal = 0, vertical = 0;
 
+		#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBPLAYER
+		if (Input.GetKeyDown ("space"))
+			GameManager.instance.playersTurn = false;
 		horizontal = (int)Input.GetAxisRaw ("Horizontal");
-		verical = (int)Input.GetAxisRaw ("Vertical");
+		vertical = (int)Input.GetAxisRaw ("Vertical");
+
+		#else
+		if(Input.touchCount > 0){
+			Touch myTouch = Input.touches[0];
+			if(myTouch.phase == TouchPhase.Began){
+				touchOrigin = myTouch.position;
+			} else if(myTouch.phase == TouchPhase.Ended && touchOrigin.x >= 0){
+				Vector2 touchEnd = myTouch.position;
+				float x = touchEnd.x - touchOrigin.x;
+				float y = touchEnd.y - touchOrigin.y;
+				touchOrigin.x = -1;
+				if(Mathf.Abs(x) > Mathf.Abs(y))
+					horizontal = x > 0 ? 1 : -1;
+				else
+					vertical = y > 0 ? 1 : -1;
+			}
+		}
+		#endif
 
 		if (horizontal != 0)
-			verical = 0;
+			vertical = 0;
 
-		if (horizontal != 0 || verical != 0)
-			AttemptMove (horizontal, verical);
+		if (horizontal != 0 || vertical != 0)
+			AttemptMove (horizontal, vertical);
 	}
 
 	protected override void AttemptMove (int xDir, int yDir){

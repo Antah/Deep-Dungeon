@@ -15,8 +15,9 @@ public class Wall : InteractableObject {
 		spriteRenderer = GetComponent<SpriteRenderer> ();
 	}
 
-	public void DamageWall(int loss){
-		SoundManager.instance.RandomizeSfx(chopSound1, chopSound2);
+	public void DamageWall(int loss, int distanceFromPlayer = 0){
+		if(distanceFromPlayer < 12)
+			SoundManager.instance.RandomizeSfx(chopSound1, chopSound2);
 
 		hp -= loss;
 

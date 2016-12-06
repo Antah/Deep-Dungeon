@@ -9,7 +9,6 @@ public class Enemy : MovingObject {
 
 	private Animator animator;
 	private Transform target;
-	private int distanceToTarget;
 
 	public AudioClip enemyAttack1;
 	public AudioClip enemyAttack2;
@@ -28,9 +27,9 @@ public class Enemy : MovingObject {
 			return false;
 
 		int xDir = 0, yDir = 0;
-		GetDistanceToTarget ();
+		GetDistanceFromTarget ();
 
-		if (distanceToTarget > 16)
+		if (distanceFromTarget > 16)
 			moveTime = 0.02f;
 
 		AttemptMove (xDir, yDir);
@@ -38,7 +37,7 @@ public class Enemy : MovingObject {
 	}
 
 	protected override void AttemptMove (int xDir, int yDir){
-		if (distanceToTarget > 16) {
+		if (distanceFromTarget > 16) {
 			xDir = Random.Range (-1, 1);
 			if (xDir == 0)
 				yDir = Random.Range (-1, 1);
@@ -101,8 +100,8 @@ public class Enemy : MovingObject {
 			GameObject.Destroy (gameObject);
 	}
 
-	private void GetDistanceToTarget(){
-		distanceToTarget = (int)(Mathf.Abs (target.position.x - transform.position.x) + Mathf.Abs (target.position.y - transform.position.y));
+	private void GetDistanceFromTarget(){
+		distanceFromTarget = (int)(Mathf.Abs (target.position.x - transform.position.x) + Mathf.Abs (target.position.y - transform.position.y));
 	}
 
 	private bool IsWaiting(){

@@ -7,6 +7,7 @@ public abstract class MovingObject : InteractableObject {
 	public LayerMask blockingLayer;
 	public int wallDamage = 1;
 
+	protected int distanceFromTarget = 0;
 	private BoxCollider2D boxCollider;
 	private Rigidbody2D rb2D;
 
@@ -48,7 +49,7 @@ public abstract class MovingObject : InteractableObject {
 	protected virtual void Interact(InteractableObject hitObject){
 		if (hitObject is Wall) {
 			Wall hitWall = hitObject as Wall;
-			hitWall.DamageWall (wallDamage);
+			hitWall.DamageWall (wallDamage, distanceFromTarget);
 		}
 	}
 
