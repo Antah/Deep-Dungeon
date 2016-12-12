@@ -109,6 +109,6 @@ public class GameManager : MonoBehaviour {
 	}
 
 	public void SetFoodText(int text){
-		foodText.text = "Food: " + text;
+		foodText.text = "Life: " + text;
 	}
 }

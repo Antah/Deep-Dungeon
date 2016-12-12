@@ -60,8 +60,6 @@
      <Compile Include="Assets\Scripts\Utilities\CameraController.cs" />
      <Compile Include="Assets\Scripts\Utilities\IntRange.cs" />
      <Compile Include="Assets\Scripts\Utilities\SoundManager.cs" />
-     <Compile Include="Assets\TutorialInfo\Scripts\TutorialInfo.cs" />
-     <None Include="Assets\TutorialInfo\Fonts\LICENSE.txt" />
      <None Include="Assets\Fonts\OFL.txt" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
