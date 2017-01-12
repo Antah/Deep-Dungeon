@@ -7,57 +7,59 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour {
 
 	public float levelStartDelay = 2f;
-	public float turnDelay = 0.02f;
+	public float turnDelay;
 	public static GameManager instance = null;
 	public BoardCreator boardScript;
-	public int playerFoodPoints = 100;
-	[HideInInspector] public bool playersTurn = true;
+	public int playerHealth;
 	public Text foodText = null;
+	public int level;
+	public bool gameInProgress;
+
+	[HideInInspector] public bool playersTurn = true;
 
 	private Text levelText;
 	private GameObject levelImage;
 	private bool doingSetup;
-	private int level = 1;
 	public Player player;
 	private List<Enemy> enemies;
 	private bool enemiesMoving;
 
-	// Use this for initialization
+
 	void Awake () {
 		if (instance == null)
 			instance = this;
 		else if (instance != this)
-			Destroy (gameObject);
+			DestroyObject (gameObject);
 
 		DontDestroyOnLoad (gameObject);
 
+		turnDelay = 0.2f;
 		enemies = new List<Enemy> ();
 		boardScript = GetComponent<BoardCreator> ();
-		InitGame ();
-	}
-
-	void Start()
-	{
 		SceneManager.sceneLoaded += delegate (Scene scene, LoadSceneMode mode)
 		{
 			level++;
 			InitGame();
+			playersTurn = true;
 		};
 	}
 
 	void InitGame(){
+		if (!gameInProgress)
+			return;
 		doingSetup = true;
 
+		foodText = GameObject.Find ("FoodText").GetComponent<Text> ();
+		player = GameObject.Find ("Player").GetComponent<Player> ();
 		levelImage = GameObject.Find ("LevelImage");
 		levelText = GameObject.Find ("LevelText").GetComponent<Text> ();
 		levelText.text = "Level " + level;
 		levelImage.SetActive(true);
-		Invoke ("HideLevelImage", levelStartDelay);
 
-		foodText = GameObject.Find ("FoodText").GetComponent<Text> ();
-		player = GameObject.Find ("Player").GetComponent<Player> ();
 		enemies.Clear ();
 		boardScript.SetupScene (level);
+
+		Invoke ("HideLevelImage", levelStartDelay);
 	}
 
 	private void HideLevelImage(){
@@ -66,12 +68,12 @@ public class GameManager : MonoBehaviour {
 	}
 
 	public void GameOver(){
-		levelText.text = "After " + level + " days, you starved.";
+		GameManager.instance.gameInProgress = false;
+		levelText.text = "After " + level + " levels, you have died.";
 		levelImage.SetActive (true);
-		enabled = false;
+		StartCoroutine (ExitToMenu ());
 	}
-
-	// Update is called once per frame
+		
 	void Update () {
 		if (playersTurn || enemiesMoving || doingSetup)
 			return;
@@ -79,23 +81,26 @@ public class GameManager : MonoBehaviour {
 		StartCoroutine (MoveEnemies ());
 	}
 
-	public void AddEnemyToList(Enemy script){
-		enemies.Add (script);
+	public void AddEnemyToList(Enemy enemy){
+		enemies.Add (enemy);
+	}
+
+	IEnumerator ExitToMenu(){
+		yield return new WaitForSeconds (3f);
+		SceneManager.LoadScene ("MainMenu");
+		SoundManager.instance.musicSource.Play ();
 	}
 
 	IEnumerator MoveEnemies ()
 	{
 		enemiesMoving = true;
-		yield return new WaitForSeconds (turnDelay);
-		if (enemies.Count == 0)
-			yield return new WaitForSeconds (turnDelay);
 
 		for (int i = 0; i < enemies.Count; i++) {
 			if (enemies [i] != null)
 				enemies [i].MoveEnemy();
-			yield return new WaitForSeconds (enemies [i].moveTime);
 		}
 			
+		yield return new WaitForSeconds (turnDelay);
 		playersTurn = true;
 		enemiesMoving = false;
 	}
@@ -108,7 +113,7 @@ public class GameManager : MonoBehaviour {
 		return player;
 	}
 
-	public void SetFoodText(int text){
+	public void SetLifeText(int text){
 		foodText.text = "Life: " + text;
 	}
 }

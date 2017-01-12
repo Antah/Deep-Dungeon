@@ -70,7 +70,7 @@ public class Corridor
 		corridorLength = length.Random;
 
 		// Create a cap for how long the length can be (this will be changed based on the direction and position).
-		int maxLength = length.m_Max;
+		int maxLength = length.maximum;
 
 		switch (direction)
 		{
@@ -83,22 +83,22 @@ public class Corridor
 			startYPos = room.yPos + room.roomHeight;
 
 			// The maximum length the corridor can be is the height of the board (rows) but from the top of the room (y pos + height).
-			maxLength = rows - startYPos - roomHeight.m_Min - 1;
+			maxLength = rows - startYPos - roomHeight.minimum - 1;
 			break;
 		case Direction.East:
 			startXPos = room.xPos + room.roomWidth;
 			startYPos = Random.Range(room.yPos, room.yPos + room.roomHeight );
-			maxLength = columns - startXPos - roomWidth.m_Min - 1;
+			maxLength = columns - startXPos - roomWidth.minimum - 1;
 			break;
 		case Direction.South:
 			startXPos = Random.Range (room.xPos, room.xPos + room.roomWidth);
 			startYPos = room.yPos;
-			maxLength = startYPos - roomHeight.m_Min - 1;
+			maxLength = startYPos - roomHeight.minimum - 1;
 			break;
 		case Direction.West:
 			startXPos = room.xPos;
 			startYPos = Random.Range (room.yPos, room.yPos + room.roomHeight);
-			maxLength = startXPos - roomWidth.m_Min - 1;
+			maxLength = startXPos - roomWidth.minimum - 1;
 			break;
 		}
 

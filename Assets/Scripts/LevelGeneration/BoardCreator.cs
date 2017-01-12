@@ -64,7 +64,8 @@ public class BoardCreator : MonoBehaviour
 		CreateRoomsAndCorridors ();
 
 		SetTilesValuesForRooms ();
-		SetTilesValuesForCorridors ();
+		if(corridors != null)
+			SetTilesValuesForCorridors ();
 
 		InstantiateTiles ();
 		//InstantiateOuterWalls ();
@@ -97,12 +98,9 @@ public class BoardCreator : MonoBehaviour
 
 		if (exitRoom > randomNumRooms) 
 			exitRoom = randomNumRooms;
-		// There should be one less corridor than there is rooms.
-		corridors = new Corridor[randomNumRooms - 1];
 
 		// Create the first room and corridor.
 		rooms[0] = new Room ();
-		corridors[0] = new Corridor ();
 
 		// Setup the first room, there is no previous corridor so we do not use one.
 		rooms[0].SetupRoom(roomWidth, roomHeight, columns, rows);
@@ -112,7 +110,28 @@ public class BoardCreator : MonoBehaviour
 			GameManager.instance.GetPlayer().transform.position = playerPos;
 		}
 		// Setup the first corridor using the first room.
-		corridors[0].SetupCorridor(rooms[0], corridorLength, roomWidth, roomHeight, columns, rows, true);
+		if (randomNumRooms >= 2) {
+			corridors = new Corridor[randomNumRooms - 1];
+			corridors [0] = new Corridor ();
+			corridors[0].SetupCorridor(rooms[0], corridorLength, roomWidth, roomHeight, columns, rows, true);
+		}
+
+		if (startingRoom == 1) {
+			Vector3 playerPos = new Vector3 (rooms[0].xPos, rooms[0].yPos, 0);
+			if(ClearSpace(playerPos, 0.1f))
+				playerPos = new Vector3 (rooms[0].xPos, rooms[0].yPos, 0);
+			GameManager.instance.GetPlayer().transform.position = playerPos;
+		}
+
+		if (exitRoom == 1)
+		{
+			Vector3 exitPos = new Vector3 (rooms[0].xPos + rooms[0].roomWidth - 1, rooms[0].yPos + rooms[0].roomHeight - 1, 0);
+			if(ClearSpace(exitPos, 0.1f))
+				exitPos = new Vector3 (rooms[0].xPos + rooms[0].roomWidth - 1, rooms[0].yPos + rooms[0].roomHeight - 1, 0);
+			GameObject tileInstance = Instantiate (exit, exitPos, Quaternion.identity) as GameObject;
+			tileInstance.transform.parent = boardHolder.transform;
+		}
+
 
 		for (int i = 1; i < rooms.Length; i++)
 		{
@@ -149,7 +168,6 @@ public class BoardCreator : MonoBehaviour
 				tileInstance.transform.parent = boardHolder.transform;
 			}
 		}
-
 	}
 
 
@@ -412,7 +430,7 @@ public class BoardCreator : MonoBehaviour
 		for (int i = 0; i < hitColliders.Length; i++) {
 			if(hitColliders[i].name == "Player" || hitColliders[i].name == "Exit")
 				return false;
-			Destroy (hitColliders [i].gameObject);
+			DestroyObject (hitColliders [i].gameObject);
 		}
 		return true;
 	}

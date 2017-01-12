@@ -5,66 +5,51 @@ public abstract class MovingObject : InteractableObject {
 
 	public float moveTime = 0.1f;
 	public LayerMask blockingLayer;
-	public int wallDamage = 1;
+	public int digDamage = 1, attackDamage = 10;
 
-	protected int distanceFromTarget = 0;
-	private BoxCollider2D boxCollider;
-	private Rigidbody2D rb2D;
+	protected BoxCollider2D boxCollider;
+	protected Rigidbody2D rb2D;
+	protected SpriteRenderer spriteRenderer;
 
-	// Use this for initialization
 	protected virtual void Start () {
 		boxCollider = GetComponent<BoxCollider2D> ();
 		rb2D = GetComponent<Rigidbody2D> ();
+		spriteRenderer = GetComponent<SpriteRenderer> ();
 	}
 
-	protected bool Move(int xDir, int yDir, out RaycastHit2D hit){
+	protected virtual void MoveOrInteract(int xDir, int yDir){
+	}
+
+	protected RaycastHit2D CheckForCollision(int xDir, int yDir){
 		Vector2 start = transform.position;
-		Vector2 end = start +new Vector2(xDir, yDir);
+		Vector2 end = start + new Vector2(xDir, yDir);
 
 		boxCollider.enabled = false;
-		hit = Physics2D.Linecast(start, end, blockingLayer);
+		RaycastHit2D hit = Physics2D.Linecast(start, end, blockingLayer);
 		boxCollider.enabled = true;
 
-		if(hit.transform == null){
-			MakeMove (end);
-			return true;
-		}
-		return false;
-	}
-
-	protected virtual void AttemptMove(int xDir, int yDir)
-	{
-		RaycastHit2D hit;
-		bool canMove = Move (xDir, yDir, out hit);
-
-		if (hit.transform == null)
-			return;
-
-		InteractableObject hitObject = hit.transform.GetComponent (typeof(InteractableObject)) as InteractableObject;
-
-		if (!canMove && hitObject != null )
-			Interact(hitObject);
+		return hit;
 	}
 
 	protected virtual void Interact(InteractableObject hitObject){
-		if (hitObject is Wall) {
-			Wall hitWall = hitObject as Wall;
-			hitWall.DamageWall (wallDamage, distanceFromTarget);
+		if (hitObject is MovingObject) {
+			hitObject.Hit (attackDamage);
+		}
+		else {
+			hitObject.Hit (digDamage);
 		}
 	}
 
-	protected virtual void MakeMove(Vector2 end){
-		StartCoroutine (SmoothMovement (end));
+	protected virtual void Move(int xDir, int yDir){
+		UpdateSpriteDirection (xDir);
+		Vector3 end = transform.position + new Vector3(xDir, yDir, 0);
+		transform.position = end;
 	}
 
-	protected IEnumerator SmoothMovement(Vector3 end){
-		float sqrRemainingDistance = (transform.position - end).sqrMagnitude;
-
-		while (sqrRemainingDistance > float.Epsilon) {
-			Vector3 newPosition = Vector3.MoveTowards (rb2D.position, end, 1f / moveTime * Time.deltaTime);
-			rb2D.MovePosition (newPosition);
-			sqrRemainingDistance = (transform.position - end).sqrMagnitude;
-			yield return null;
-		}
+	protected virtual void UpdateSpriteDirection(int xDir){
+		if (xDir > 0)
+			spriteRenderer.flipX = false;
+		else if(xDir < 0)
+			spriteRenderer.flipX = true;
 	}
 }

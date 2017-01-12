@@ -5,38 +5,26 @@ using UnityEngine.SceneManagement;
 
 public class Player : MovingObject {
 
-	public int enemyDamage = 1;
-	public int pointsPerFood = 10;
-	public int pointsPerSoda = 20;
-	public float restartLevelDelay = 1f;
-	public int food;
+	public AudioClip moveSound1, moveSound2, dieSound, attackEnemySound, attackWallSound, attackRubbleSound1, attackRubbleSound2;
 
-	public AudioClip moveSound1;
-	public AudioClip moveSound2;
-	public AudioClip eatSound1;
-	public AudioClip eatSound2;
-	public AudioClip drinkSound1;
-	public AudioClip drinkSound2;
-	public AudioClip gameOverSound;
-
+	private int maxHealth = 200;
 	private Animator animator;
 	private Vector2 touchOrigin = -Vector2.one;
+	private bool isMoving;
 
-	// Use this for initialization
 	protected override void Start () {
 		animator = GetComponent<Animator> ();
 
-		food = GameManager.instance.playerFoodPoints;
-		GameManager.instance.SetFoodText(food);
+		health = GameManager.instance.playerHealth;
+		GameManager.instance.SetLifeText(health);
 
 		base.Start ();
 	}
 
 	void OnDisable(){
-		GameManager.instance.playerFoodPoints = food;
+		GameManager.instance.playerHealth = health;
 	}
-	
-	// Update is called once per frame
+
 	void Update () {
 		if (!GameManager.instance.playersTurn)
 			return;
@@ -71,62 +59,89 @@ public class Player : MovingObject {
 			vertical = 0;
 
 		if (horizontal != 0 || vertical != 0)
-			AttemptMove (horizontal, vertical);
+			MoveOrInteract (horizontal, vertical);
 	}
 
-	protected override void AttemptMove (int xDir, int yDir){
-		food--;
-		GameManager.instance.SetFoodText(food);
+	protected override void MoveOrInteract(int xDir, int yDir){
+		RaycastHit2D hit = CheckForCollision (xDir, yDir);
+		UpdateSpriteDirection (xDir);
 
-		base.AttemptMove(xDir, yDir);
-
-		CheckIfGameOver ();
-
-		GameManager.instance.playersTurn = false;
-	}
-
-	private void OnTriggerEnter2D (Collider2D other){
-		if (other.tag == "Exit") {
-			Invoke ("Restart", restartLevelDelay);
-			enabled = false;
-		} else if (other.tag == "Food") {
-			food += pointsPerFood;
-			GameManager.instance.SetFoodText(food);
-			other.gameObject.SetActive (false);
-		} else if (other.tag == "Soda") {
-			food += pointsPerSoda;
-			GameManager.instance.SetFoodText(food);
-			other.gameObject.SetActive (false);
+		if (hit.transform == null) {
+			Move (xDir, yDir);
+			return;
 		}
+
+		InteractableObject hitObject = hit.transform.GetComponent (typeof(InteractableObject)) as InteractableObject;
+
+		if (hitObject != null )
+			Interact(hitObject);
+	}
+		
+	private void OnTriggerEnter2D (Collider2D other){
+		InteractableObject steppedObject = other.transform.GetComponent (typeof(InteractableObject)) as InteractableObject;
+		steppedObject.SteppedOn();
 	}
 
 	protected override void Interact(InteractableObject hitObject){
+		PlaySound (hitObject);
+		animator.SetTrigger ("playerAttack");
 		base.Interact (hitObject);
-		if (hitObject is Enemy) {
-			Enemy hitEnemy = hitObject as Enemy;
-			hitEnemy.DamageEnemy (enemyDamage);
-		}
-		if(hitObject is Enemy || hitObject is Wall)
-			animator.SetTrigger ("playerChop");
+		GameManager.instance.playersTurn = false;
 	}
 
-	private void Restart(){
-		//SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-		GameManager.instance.NextLevel ();
-	}
-
-	public void LoseFood (int loss){
+	public override void Hit(int damage){
 		animator.SetTrigger ("playerHit");
-		food -= loss;
-		GameManager.instance.SetFoodText(food);
+		base.Hit(damage);
+	}
+
+	public override void ChangeHealth (int change){		
+		if (health <= 0)
+			return;
+		health += change;
+		if (health > maxHealth)
+			health = maxHealth;
+		GameManager.instance.SetLifeText(health);
 		CheckIfGameOver();
 	}
 
 	private void CheckIfGameOver(){
-		if (food <= 0){
-			SoundManager.instance.PlaySingle (gameOverSound);
+		if (health <= 0){
 			SoundManager.instance.musicSource.Stop ();
+			SoundManager.instance.PlaySoundEffect (efxSource, dieSound);
 			GameManager.instance.GameOver ();
 		}
+	}
+
+	protected override void Move(int xDir, int yDir){
+		Vector3 end = transform.position + new Vector3(xDir, yDir, 0);
+		StartCoroutine (SmoothMovement (end));
+	}
+
+	protected IEnumerator SmoothMovement(Vector3 end){
+		if (isMoving)
+			yield break;
+		isMoving = true;
+		if (health > 100)
+			ChangeHealth (-2);
+		SoundManager.instance.PlaySoundEffectWithRandomPitch(efxSource, moveSound1, moveSound2);
+		float sqrRemainingDistance = (transform.position - end).sqrMagnitude;
+
+		while (sqrRemainingDistance > 0) {
+			Vector3 newPosition = Vector3.MoveTowards (rb2D.position, end, 1f / moveTime * Time.deltaTime);
+			rb2D.MovePosition (newPosition);
+			sqrRemainingDistance = (transform.position - end).sqrMagnitude;
+			yield return null;
+		}
+		isMoving = false;
+		GameManager.instance.playersTurn = false;
+	}
+
+	private void PlaySound(InteractableObject hitObject){
+		if(hitObject is Rubble)
+			SoundManager.instance.PlaySoundEffectWithRandomPitch(efxSource, attackRubbleSound1, attackRubbleSound2);
+		else if(hitObject is Enemy)
+			SoundManager.instance.PlaySoundEffectWithRandomPitch(efxSource, attackEnemySound);
+		else if(hitObject is Wall)
+			SoundManager.instance.PlaySoundEffectWithRandomPitch(efxSource, attackWallSound);
 	}
 }

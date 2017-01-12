@@ -45,18 +45,22 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\BoardGeneration\BoardCreator.cs" />
-     <Compile Include="Assets\Scripts\BoardGeneration\Corridor.cs" />
-     <Compile Include="Assets\Scripts\BoardGeneration\Room.cs" />
      <Compile Include="Assets\Scripts\BoardManager.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\Apple.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\Exit.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\InteractableObject.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\Enemy.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\MovingObject.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\MovingObjects\Player.cs" />
-     <Compile Include="Assets\Scripts\InteractableObjects\OuterWall.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\Potion.cs" />
+     <Compile Include="Assets\Scripts\InteractableObjects\Rubble.cs" />
      <Compile Include="Assets\Scripts\InteractableObjects\Wall.cs" />
+     <Compile Include="Assets\Scripts\LevelGeneration\BoardCreator.cs" />
+     <Compile Include="Assets\Scripts\LevelGeneration\Corridor.cs" />
+     <Compile Include="Assets\Scripts\LevelGeneration\Room.cs" />
      <Compile Include="Assets\Scripts\Loader.cs" />
+     <Compile Include="Assets\Scripts\MainMenu.cs" />
      <Compile Include="Assets\Scripts\Utilities\CameraController.cs" />
      <Compile Include="Assets\Scripts\Utilities\IntRange.cs" />
      <Compile Include="Assets\Scripts\Utilities\SoundManager.cs" />
