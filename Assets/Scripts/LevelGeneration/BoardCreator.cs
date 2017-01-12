@@ -22,7 +22,6 @@ public class BoardCreator : MonoBehaviour
 
 	public IntRange startingRoomRange = new IntRange (1, 2);
 	public IntRange exitRoomRange = new IntRange (6, 10);
-	private int startingRoom, exitRoom;
 
 	public IntRange enemiesPerRoom = new IntRange (0, 2);
 	public IntRange rubblePerRoom = new IntRange (2, 8);
@@ -39,6 +38,7 @@ public class BoardCreator : MonoBehaviour
 	private Room[] rooms;                                     // All the rooms that are created for this board.
 	private Corridor[] corridors;                             // All the corridors that connect the rooms.
 	private GameObject boardHolder;                           // GameObject that acts as a container for all other tiles.
+	private int startingRoom, exitRoom;
 
 	private List<Vector3> gridPositions = new List<Vector3>(); //Positions grid for randomizing objects inside each room
 	private int level;
