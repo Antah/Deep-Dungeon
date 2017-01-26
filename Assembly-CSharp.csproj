@@ -60,9 +60,9 @@
      <Compile Include="Assets\Scripts\LevelGeneration\Corridor.cs" />
      <Compile Include="Assets\Scripts\LevelGeneration\Room.cs" />
      <Compile Include="Assets\Scripts\Loader.cs" />
-     <Compile Include="Assets\Scripts\MainMenu.cs" />
      <Compile Include="Assets\Scripts\Utilities\CameraController.cs" />
      <Compile Include="Assets\Scripts\Utilities\IntRange.cs" />
+     <Compile Include="Assets\Scripts\Utilities\MainMenu.cs" />
      <Compile Include="Assets\Scripts\Utilities\SoundManager.cs" />
      <None Include="Assets\Fonts\OFL.txt" />
  <Reference Include="UnityEngine.UI">

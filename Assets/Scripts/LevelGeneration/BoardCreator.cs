@@ -26,6 +26,7 @@ public class BoardCreator : MonoBehaviour
 	public IntRange enemiesPerRoom = new IntRange (0, 2);
 	public IntRange rubblePerRoom = new IntRange (2, 8);
 	public IntRange foodPerRoom = new IntRange (1, 3);
+	public IntRange enemiesScaling = new IntRange (20, 60);
 
 	public GameObject[] floorTiles;                           // An array of floor tile prefabs.
 	public GameObject[] wallTiles;                            // An array of wall tile prefabs.
@@ -72,7 +73,7 @@ public class BoardCreator : MonoBehaviour
 	}
 
 
-	void SetupTilesArray ()
+	private void SetupTilesArray ()
 	{
 		// Set the tiles jagged array to the correct width.
 		tiles = new TileType[columns][];
@@ -90,7 +91,7 @@ public class BoardCreator : MonoBehaviour
 	}
 
 
-	void CreateRoomsAndCorridors ()
+	private void CreateRoomsAndCorridors ()
 	{
 		// Create the rooms array with a random size.
 		int randomNumRooms = numRooms.Random;
@@ -171,7 +172,7 @@ public class BoardCreator : MonoBehaviour
 	}
 
 
-	void SetTilesValuesForRooms ()
+	private void SetTilesValuesForRooms ()
 	{
 		// Go through all the rooms
 		for (int i = 0; i < rooms.Length; i++)
@@ -228,7 +229,7 @@ public class BoardCreator : MonoBehaviour
 	}
 
 
-	void SetTilesValuesForCorridors ()
+	private void SetTilesValuesForCorridors ()
 	{
 		// Go through every corridor...
 		for (int i = 0; i < corridors.Length; i++)
@@ -284,7 +285,7 @@ public class BoardCreator : MonoBehaviour
 	}
 
 
-	void InstantiateTiles ()
+	private void InstantiateTiles ()
 	{
 		// Go through all the tiles in the jagged array...
 		for (int i = 0; i < tiles.Length; i++)
@@ -357,7 +358,7 @@ public class BoardCreator : MonoBehaviour
 	}
 	#endregion
 
-	void InstantiateFromArray (GameObject[] prefabs, float xCoord, float yCoord)
+	private void InstantiateFromArray (GameObject[] prefabs, float xCoord, float yCoord)
 	{
 		// Create a random index for the array.
 		int randomIndex = Random.Range(0, prefabs.Length);
@@ -393,8 +394,8 @@ public class BoardCreator : MonoBehaviour
 		return randomPosition;
 	}
 
-	void LayoutObjectAtRandom(Room room, GameObject[] tileArray, IntRange range, int flatBonus = 0){
-		int objectCount = range.Random;
+	private void LayoutObjectAtRandom(Room room, GameObject[] tileArray, IntRange range, int flatBonus = 0){
+		int objectCount = range.Random + flatBonus;
 
 		for(int i = 0; i < objectCount; i++){
 			if (gridPositions.Count == 0)
@@ -408,24 +409,22 @@ public class BoardCreator : MonoBehaviour
 		}
 	}
 
-	void RandomizeRoomContents(Room room){
+	private void RandomizeRoomContents(Room room){
 		LayoutObjectAtRandom (room, foodTiles, foodPerRoom);
 		LayoutObjectAtRandom (room, wallTiles, rubblePerRoom);
 
-		int enemiesCountScaling = (int)Math.Log (level, 2f);
+		int enemiesCountScaling = EnemiesCountScaling();
 		LayoutObjectAtRandom (room, enemyTiles, enemiesPerRoom, enemiesCountScaling);
-
-		//Instantiate (exit, new Vector3 (columns - 1, rows - 1, 0f), Quaternion.identity);
 	}
 
-	bool CheckForColliders(Vector2 center, float radius) {
+	private bool CheckForColliders(Vector2 center, float radius) {
 		Collider2D[] hitColliders = Physics2D.OverlapCircleAll(center, radius);
 		if (hitColliders.Length > 0)
 			return true;
 		return false;
 	}
 	
-	bool ClearSpace(Vector2 center, float radius) {
+	private bool ClearSpace(Vector2 center, float radius) {
 		Collider2D[] hitColliders = Physics2D.OverlapCircleAll(center, radius);
 		for (int i = 0; i < hitColliders.Length; i++) {
 			if(hitColliders[i].name == "Player" || hitColliders[i].name == "Exit")
@@ -433,5 +432,12 @@ public class BoardCreator : MonoBehaviour
 			DestroyObject (hitColliders [i].gameObject);
 		}
 		return true;
+	}
+
+	private int EnemiesCountScaling(){
+		int baseScaling = enemiesScaling.minimum * (level - 1);
+		int result = enemiesScaling.Random + baseScaling;
+
+		return result / 100;
 	}
 }
