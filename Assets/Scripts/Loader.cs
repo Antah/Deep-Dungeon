@@ -6,13 +6,16 @@ public class Loader : MonoBehaviour {
 	public AudioClip doorSound;
 	public GameObject gameManager;
 	public SoundManager soundManager;
+    public GameObject boardManager;
 
-	void Awake () {
+    void Awake () {
 		if (GameManager.instance == null)
 			Instantiate (gameManager);
 		if (SoundManager.instance == null)
 			Instantiate (soundManager);
-	}
+
+        
+    }
 
 	public void EnterGame(){
 		GameManager.instance.playerHealth = 100;
