@@ -40,7 +40,7 @@ public class OldBoardCreator : BoardCreator
     private List<Vector3> gridPositions = new List<Vector3>(); //Positions grid for randomizing objects inside each room
 
 
-    public void SetupScene(int level)
+    public override void SetupScene(int level)
     {
         this.level = level;
         BoardSetup();
@@ -227,7 +227,7 @@ public class OldBoardCreator : BoardCreator
                 }
             }
 
-            RandomizeRoomContents(currentRoom);
+            //RandomizeRoomContents(currentRoom);
         }
     }
 

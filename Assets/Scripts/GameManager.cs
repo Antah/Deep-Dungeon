@@ -9,13 +9,12 @@ public class GameManager : MonoBehaviour {
 	public float levelStartDelay = 2f;
 	public float turnDelay;
 	public static GameManager instance = null;
-    public OldBoardCreator boardScript;
-    public NewMapGen newBoardScript;
+    public BoardCreator boardScript;
+    public GeneratorType generatorType;
     public int playerHealth;
 	public Text foodText = null;
 	public int level;
 	public bool gameInProgress;
-    public bool useNewGenerator;
 
 	[HideInInspector] public bool playersTurn = true;
 
@@ -26,8 +25,12 @@ public class GameManager : MonoBehaviour {
 	private List<Enemy> enemies;
 	private bool enemiesMoving;
 
+    public enum GeneratorType
+    {
+        RoomsAndCorridors, CellularAutomaton, BSP, DelunayTriangulation
+    }
 
-	void Awake () {
+    void Awake () {
 		if (instance == null)
 			instance = this;
 		else if (instance != this)
@@ -38,10 +41,19 @@ public class GameManager : MonoBehaviour {
 		turnDelay = 0.2f;
 		enemies = new List<Enemy> ();
 
-        if(useNewGenerator)
-            newBoardScript = GetComponent<NewMapGen>();
-        else
-            boardScript = GetComponent<OldBoardCreator> ();
+        switch (generatorType)
+        {
+            case GeneratorType.RoomsAndCorridors:
+                boardScript = GetComponent<OldBoardCreator>();
+                break;
+            case GeneratorType.CellularAutomaton:
+                boardScript = GetComponent<CellularAutomaton>();
+                break;
+            case GeneratorType.BSP:
+                boardScript = GetComponent<BSP>();
+                break;
+        }
+            
 
 		SceneManager.sceneLoaded += delegate (Scene scene, LoadSceneMode mode)
 		{
@@ -64,10 +76,7 @@ public class GameManager : MonoBehaviour {
 		levelImage.SetActive(true);
 
 		enemies.Clear ();
-        if (useNewGenerator)
-            newBoardScript.SetupScene(level);
-        else
-            boardScript.SetupScene (level);
+        boardScript.SetupScene (level);
 
 		Invoke ("HideLevelImage", levelStartDelay);
 	}

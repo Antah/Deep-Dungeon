@@ -11,7 +11,7 @@ public class BoardCreator : MonoBehaviour
 
     protected GameObject boardHolder;                           // GameObject that acts as a container for all other tiles.
     protected int level;
-    public void SetupScene(int level)
+    public virtual void SetupScene(int level)
     {
     }
 
