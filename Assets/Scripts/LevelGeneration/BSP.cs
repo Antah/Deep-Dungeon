@@ -56,11 +56,11 @@ public class BSP : BoardCreator
                 map[x, y] = 1;
 
         Coord btmLeft = new Coord(1, 1);
-        Area mainRoom = new Area(btmLeft, columns - 2, rows - 2);
-        BSPLeaf mainLeaf = new BSPLeaf(mainRoom);
-        DivideRoom(mainLeaf);
-        Connect(mainLeaf);
-        DrawRoom(mainLeaf.area.room);
+        BSPArea mainArea = new BSPArea(btmLeft, columns - 2, rows - 2);
+        BSPNode mainNode = new BSPNode(mainArea);
+        DivideArea(mainNode);
+        Connect(mainNode);
+        DrawRooms(mainNode.area.rooms);
     }
 
     private void InstantiateTiles()
@@ -83,17 +83,17 @@ public class BSP : BoardCreator
         }
     }
 
-    private void DivideRoom(BSPLeaf leaf)
+    private void DivideArea(BSPNode node)
     {
-        int w = leaf.area.width;
-        int h = leaf.area.height;
+        int w = node.area.width;
+        int h = node.area.height;
         int division; //1 means vertical, 0 means horizontal
 
         if (w < minWidth)
         {
             if (h < minHeight)
             {
-                CreateRoom(leaf);
+                CreateRoom(node);
                 return;
             }
             else
@@ -108,74 +108,82 @@ public class BSP : BoardCreator
             division = pseudoRandom.Next(0, 2);
         }
 
-        BSPLeaf newLeaf1, newLeaf2;
-        Area newRoom1, newRoom2;
+        BSPNode newLeaf1, newLeaf2;
+        BSPArea newArea1, newArea2;
 
         if(division == 0) // horizontal bisection
         {
-            int lowend = leaf.area.btmLeft.tileY + offset;
-            int highend = leaf.area.btmLeft.tileY + leaf.area.height - offset;
+            int lowend = node.area.btmLeft.tileY + offset;
+            int highend = node.area.btmLeft.tileY + node.area.height - offset;
             int divisionHeight =  pseudoRandom.Next(lowend, highend);
 
-            newRoom1 = new Area(leaf.area.btmLeft, leaf.area.width, divisionHeight - leaf.area.btmLeft.tileY);
-            Coord newCoord2 = new Coord(leaf.area.btmLeft.tileX, divisionHeight + 1);
-            newRoom2 = new Area(newCoord2, leaf.area.width, leaf.area.btmLeft.tileY + leaf.area.height -1 - divisionHeight);
+            newArea1 = new BSPArea(node.area.btmLeft, node.area.width, divisionHeight - node.area.btmLeft.tileY);
+            Coord newCoord2 = new Coord(node.area.btmLeft.tileX, divisionHeight + 1);
+            newArea2 = new BSPArea(newCoord2, node.area.width, node.area.btmLeft.tileY + node.area.height -1 - divisionHeight);
 
-            newLeaf1 = new BSPLeaf(newRoom1, leaf);
-            newLeaf2 = new BSPLeaf(newRoom2, leaf);
+            newLeaf1 = new BSPNode(newArea1, node);
+            newLeaf2 = new BSPNode(newArea2, node);
         }
         else // vertical bisection
         {
-            int lowend = leaf.area.btmLeft.tileX + offset;
-            int highend = leaf.area.btmLeft.tileX + leaf.area.width - offset;
+            int lowend = node.area.btmLeft.tileX + offset;
+            int highend = node.area.btmLeft.tileX + node.area.width - offset;
             int divisionWidth = pseudoRandom.Next(lowend, highend);
 
-            newRoom1 = new Area(leaf.area.btmLeft, divisionWidth - leaf.area.btmLeft.tileX, leaf.area.height);
-            Coord newCoord2 = new Coord(divisionWidth + 1, leaf.area.btmLeft.tileY);
-            newRoom2 = new Area(newCoord2, leaf.area.btmLeft.tileX + leaf.area.width -1 - divisionWidth, leaf.area.height);
+            newArea1 = new BSPArea(node.area.btmLeft, divisionWidth - node.area.btmLeft.tileX, node.area.height);
+            Coord newCoord2 = new Coord(divisionWidth + 1, node.area.btmLeft.tileY);
+            newArea2 = new BSPArea(newCoord2, node.area.btmLeft.tileX + node.area.width -1 - divisionWidth, node.area.height);
 
-            newLeaf1 = new BSPLeaf(newRoom1, leaf);
-            newLeaf2 = new BSPLeaf(newRoom2, leaf);
+            newLeaf1 = new BSPNode(newArea1, node);
+            newLeaf2 = new BSPNode(newArea2, node);
         }
 
-        leaf.child1 = newLeaf1;
-        leaf.child2 = newLeaf2;
+        node.child1 = newLeaf1;
+        node.child2 = newLeaf2;
 
-        DivideRoom(newLeaf1);
-        DivideRoom(newLeaf2);
+        DivideArea(newLeaf1);
+        DivideArea(newLeaf2);
     }
 
-    private void CreateRoom(BSPLeaf leaf) { 
+    private void CreateRoom(BSPNode node) { 
         int roomWidth;
         int roomHeight;
     
-        if(leaf.area.width < minRoomWidth)
-            roomWidth = leaf.area.width;
+        if(node.area.width < minRoomWidth)
+            roomWidth = node.area.width;
         else
-            roomWidth = pseudoRandom.Next(minRoomWidth, leaf.area.width + 1);
-        if (leaf.area.height < minRoomHeight)
-            roomHeight = leaf.area.height;
+            roomWidth = pseudoRandom.Next(minRoomWidth, node.area.width + 1);
+        if (node.area.height < minRoomHeight)
+            roomHeight = node.area.height;
         else
-            roomHeight = pseudoRandom.Next(minRoomHeight, leaf.area.height + 1);
+            roomHeight = pseudoRandom.Next(minRoomHeight, node.area.height + 1);
 
-        int coordX = leaf.area.btmLeft.tileX + pseudoRandom.Next(0, leaf.area.width +1 - roomWidth);
-        int coordY = leaf.area.btmLeft.tileY + pseudoRandom.Next(0, leaf.area.height +1 - roomHeight);
+        int coordX = node.area.btmLeft.tileX + pseudoRandom.Next(0, node.area.width +1 - roomWidth);
+        int coordY = node.area.btmLeft.tileY + pseudoRandom.Next(0, node.area.height +1 - roomHeight);
 
-        Room newRoom = new Room(new Coord(coordX, coordY), roomWidth, roomHeight);
-        leaf.area.room = newRoom;
-        //DrawArea(leaf.area);
-        //DrawRoom(leaf.area.room);
+        BSPRoom newRoom = new BSPRoom(new Coord(coordX, coordY), roomWidth, roomHeight);
+        node.area.rooms.Add(newRoom);
     }
 
-    private void DrawRoom(Room room)
+    private void DrawRooms(List<BSPRoom> rooms)
     {
-        foreach(Coord c in room.tiles)
+        foreach(BSPRoom room in rooms)
         {
-            map[c.tileX, c.tileY] = 0;
+            if (room.corridor)
+            {
+                foreach (Coord c in room.edgeTiles)
+                    map[c.tileX, c.tileY] = 0;
+            }
+            else
+            {
+                for (int i = room.btmLeft.tileX; i < room.btmLeft.tileX + room.width; i++)
+                    for (int j = room.btmLeft.tileY; j < room.btmLeft.tileY + room.height; j++)
+                        map[i, j] = 0;
+            }
         }
     }
 
-    private void DrawArea(Area area)
+    private void DrawArea(BSPArea area)
     {
         for(int x = area.btmLeft.tileX; x < area.btmLeft.tileX + area.width; x++)
         {
@@ -186,207 +194,211 @@ public class BSP : BoardCreator
         }
     }
 
-    private Room Connect(BSPLeaf leaf)
+    private List<BSPRoom> Connect(BSPNode leaf)
     {
         if (leaf.child1 == null && leaf.child2 == null)
-            return leaf.area.room;
+            return leaf.area.rooms;
 
-        Room roomComplex1 = Connect(leaf.child1);
-        Room roomComplex2 = Connect(leaf.child2);
+        List<BSPRoom> roomComplex1 = Connect(leaf.child1);
+        List<BSPRoom> roomComplex2 = Connect(leaf.child2);
 
-        List<Connection> connections = new List<Connection>();
-        List<Connection> straightConnections = new List<Connection>();
+        List<List<Connection>> connectionsList = new List<List<Connection>>();
         int bestDistance = -1;
 
-        foreach (Coord c1 in roomComplex1.edgeTiles)
+        foreach(BSPRoom room1 in roomComplex1)
         {
-            foreach (Coord c2 in roomComplex2.edgeTiles)
+            List<Connection> connectionsBetweenRooms = new List<Connection>();
+            foreach(BSPRoom room2 in roomComplex2)
+            {
+                int tmpBest;
+                List < Connection > tmpList = GetBestConnections(room1, room2, out tmpBest);
+                if (tmpBest < bestDistance || bestDistance == -1)
+                {
+                    bestDistance = tmpBest;
+                    connectionsBetweenRooms = tmpList;
+                }
+                else if (tmpBest == bestDistance)
+                    connectionsBetweenRooms.AddRange(tmpList);
+
+            }
+            if(bestDistance != -1)
+                connectionsList.Add(connectionsBetweenRooms);
+            bestDistance = -1;
+        }
+
+        leaf.area.rooms.AddRange(roomComplex1);
+        leaf.area.rooms.AddRange(roomComplex2);
+
+        int depth = GetTreeDepth(leaf);
+        int connectionsAmount = pseudoRandom.Next(1 + depth/3, 1 + depth/2);
+        int index = 0;
+
+        for (int i = 0; i < connectionsAmount; i++)
+        {
+            if (connectionsList.Count == 0)
+                break;
+
+            index = pseudoRandom.Next(0, connectionsList.Count);
+            List<Connection> chosenConnection = connectionsList[index];
+
+            index = pseudoRandom.Next(0, chosenConnection.Count);
+            Connection connection = chosenConnection[index];
+
+            List<Coord> corridor = CreateConnectionRoom(connection);
+            leaf.area.rooms.Add(new BSPRoom(corridor));
+
+            connectionsList.Remove(chosenConnection);
+        }
+        
+        return leaf.area.rooms;
+    }
+
+    private List<Connection> GetBestConnections(BSPRoom room1, BSPRoom room2, out int bestDistance)
+    {
+        List<Connection> connectionsBetweenRooms = new List<Connection>();
+        bestDistance = -1;
+
+        foreach (Coord c1 in room1.edgeTiles)
+        {
+            foreach (Coord c2 in room2.edgeTiles)
             {
                 int distanceBetweenRooms = (int)(Mathf.Pow(c1.tileX - c2.tileX, 2) + Mathf.Pow(c1.tileY - c2.tileY, 2));
-                if(c1.tileX == c2.tileX || c1.tileY == c2.tileY)
-                {
-                    straightConnections.Add(new Connection(c1, c2, distanceBetweenRooms));
-                }
                 if (bestDistance > distanceBetweenRooms || bestDistance == -1)
                 {
                     bestDistance = distanceBetweenRooms;
-                    connections.Clear();
-                    connections.Add(new Connection(c1, c2, distanceBetweenRooms));
-                } else if(bestDistance == distanceBetweenRooms)
-                    connections.Add(new Connection(c1, c2, distanceBetweenRooms));
+                    connectionsBetweenRooms.Clear();
+                    connectionsBetweenRooms.Add(new Connection(c1, c2, distanceBetweenRooms));
+                }
+                else if (bestDistance == distanceBetweenRooms)
+                    connectionsBetweenRooms.Add(new Connection(c1, c2, distanceBetweenRooms));
             }
         }
 
-        List<Coord> connectedRoom = new List<Coord>();
-        connectedRoom.AddRange(roomComplex1.tiles);
-        connectedRoom.AddRange(roomComplex2.tiles);
-
-        List<Coord> connectedRoomEdges = new List<Coord>();
-        connectedRoomEdges.AddRange(roomComplex1.edgeTiles);
-        connectedRoomEdges.AddRange(roomComplex2.edgeTiles);
-
-        int depth = GetTreeDepth(leaf);
-        int corridorsAmount = pseudoRandom.Next(1 + depth/3, 1 + depth/2);
-        int index = 0;
-        connections.AddRange(straightConnections);
-
-        for (int i = 0; i < corridorsAmount; i++)
-        {
-            if(connections.Count > 0)
-                 index = pseudoRandom.Next(0, connections.Count);
-
-            Connection chosenConnection = connections[index];
-            List<Coord> corridor = CreateCorridor(chosenConnection.connectionTileA, chosenConnection.connectionTileB);
-            connectedRoom.AddRange(corridor);
-            connectedRoomEdges.AddRange(corridor);
-        }
-        
-        leaf.area.room = new Room();
-        leaf.area.room.tiles = connectedRoom;
-        leaf.area.room.edgeTiles = connectedRoomEdges;
-
-        return leaf.area.room;
+        return connectionsBetweenRooms;
     }
 
-    private int GetTreeDepth(BSPLeaf leaf)
+    private int GetTreeDepth(BSPNode leaf)
     {
         int depth = 1;
-        while(leaf.child1 != null)
-        {
-            leaf = leaf.child1;
-            depth++;
-        }
+
+        if (leaf.child1 == null)
+            return depth;
+
+        int depth1 = GetTreeDepth(leaf.child1);
+        int depth2 = GetTreeDepth(leaf.child2);
+
+        if (depth1 < depth2)
+            depth += depth1;
+        else
+            depth += depth2;
+
         return depth;
     }
 
-    private List<Coord> CreateCorridor(Coord tile1, Coord tile2)
+    private List<Coord> CreateConnectionRoom(Connection connection)
     {
-        List<Coord> passage = new List<Coord>();
+        Coord tile1 = connection.connectionTileA, tile2 = connection.connectionTileB;
+        List<Coord> connectionRoom = new List<Coord>();
 
-        Coord nextTile = new Coord();
-        int xTmp = tile1.tileX, yTmp = tile1.tileY;
-        int xAdd = 1, yAdd = 1;
+        Vector2 pos = new Vector2(tile1.tileX, tile1.tileY);
 
-        if (tile1.tileX > tile2.tileX)
-            xAdd = -1;
-        if (tile1.tileY > tile2.tileY)
-            yAdd = -1;
+        int xDir = 0, yDir = 0;
 
-        if (tile1.tileX == tile2.tileX)
-            yTmp += yAdd;
-        else if (yTmp == tile2.tileY)
-            xTmp += xAdd;
-        else if (pseudoRandom.Next(0, 2) == 0)
-            xTmp += xAdd;
+        if (tile1.tileX <= tile2.tileX)
+            xDir = 1;
         else
-            yTmp += yAdd;
+            xDir = -1;
 
-        nextTile = new Coord(xTmp, yTmp);
-
-        while (nextTile.tileX != tile2.tileX || nextTile.tileY != tile2.tileY)
+        while (pos.x != tile2.tileX)
         {
-            passage.Add(nextTile);
+            connectionRoom.Add(new Coord((int)pos.x, (int)pos.y));
 
-            if (xTmp == tile2.tileX)
-                yTmp += yAdd;
-            else if (yTmp == tile2.tileY)
-                xTmp += xAdd;
-            else if (pseudoRandom.Next(0, 2) == 0)
-                xTmp += xAdd;
-            else
-                yTmp += yAdd;
-
-            nextTile = new Coord(xTmp, yTmp);
+            pos = new Vector2(pos.x + xDir, pos.y);
         }
 
-        return passage;
+        if (tile1.tileY <= tile2.tileY)
+            yDir = 1;
+        else
+            yDir = -1;
+
+        while (pos.y != tile2.tileY)
+        {
+            connectionRoom.Add(new Coord((int)pos.x, (int)pos.y));
+
+            pos = new Vector2(pos.x, pos.y + yDir);
+        }
+
+        return connectionRoom;
     }
 
-    class BSPLeaf
+    class BSPNode
     {
-        public Area area;
-        public BSPLeaf parent;
-        public BSPLeaf child1 = null, child2 = null;
+        public BSPArea area;
+        public BSPNode parent;
+        public BSPNode child1 = null, child2 = null;
 
-        public BSPLeaf(Area a, BSPLeaf p)
+        public BSPNode(BSPArea a, BSPNode p)
         {
             area = a;
             parent = p;
         }
 
-        public BSPLeaf(Area a)
+        public BSPNode(BSPArea a)
         {
             area = a;
             parent = null;
         }
     }
 
-    class Area
+    class BSPArea
     {
         public Coord btmLeft;
         public int width, height;
-        public Room room;
+        public List<BSPRoom> rooms;
 
-        public Area(Coord c, int w, int h)
+        public BSPArea(Coord c, int w, int h)
         {
             btmLeft = c;
             width = w;
             height = h;
+            rooms = new List<BSPRoom>();
         }
     }
 
-    class Room : IComparable<Room>
+    class BSPRoom
     {
-        public List<Coord> tiles;
-        public List<Coord> edgeTiles;
+        public Coord btmLeft;
+        public int width, height;
         public int roomSize;
+        public List<Coord> edgeTiles;
+        public bool corridor;
 
-        public Room()
+        public BSPRoom()
         {
         }
 
-        public Room(List<Coord> roomTiles, int[,] map)
+        public BSPRoom(List<Coord> tiles)
         {
-            tiles = roomTiles;
-            roomSize = tiles.Count;
-
-            edgeTiles = new List<Coord>();
-            foreach (Coord tile in tiles)
-            {
-                for (int x = tile.tileX - 1; x <= tile.tileX + 1; x++)
-                {
-                    for (int y = tile.tileY - 1; y <= tile.tileY + 1; y++)
-                    {
-                        if (x == tile.tileX || y == tile.tileY)
-                        {
-                            if (map[x, y] == 1)
-                            {
-                                edgeTiles.Add(tile);
-                            }
-                        }
-                    }
-                }
-            }
+            this.corridor = true;
+            this.edgeTiles = tiles;
         }
 
-        public Room(Coord coord, int roomWidth, int roomHeight)
+        public BSPRoom(Coord coord, int roomWidth, int roomHeight)
         {
-            tiles = new List<Coord>();
+            corridor = false;
+            btmLeft = coord;
+            width = roomWidth;
+            height = roomHeight;
+
             edgeTiles = new List<Coord>();
             for(int x = 0; x < roomWidth; x++){
                 for(int y = 0; y < roomHeight; y++)
                 {
                     Coord newCoord = new Coord(coord.tileX + x, coord.tileY + y);
-                    tiles.Add(newCoord);
                     if(x == 0 || y == 0 || x == roomWidth - 1 || y == roomHeight - 1)
                         edgeTiles.Add(newCoord);
                 }
             }
-        }
-
-        public int CompareTo(Room otherRoom)
-        {
-            return this.roomSize.CompareTo(otherRoom.roomSize);
         }
     }
 
