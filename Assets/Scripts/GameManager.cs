@@ -52,6 +52,9 @@ public class GameManager : MonoBehaviour {
             case GeneratorType.BSP:
                 boardScript = GetComponent<BSP>();
                 break;
+            case GeneratorType.DelunayTriangulation:
+                boardScript = GetComponent<Deluanay>();
+                break;
         }
             
 

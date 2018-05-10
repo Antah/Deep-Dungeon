@@ -197,7 +197,6 @@ public class BSP : BoardCreator
         List<Connection> connections = new List<Connection>();
         List<Connection> straightConnections = new List<Connection>();
         int bestDistance = -1;
-        int straightDistance = -1;
 
         foreach (Coord c1 in roomComplex1.edgeTiles)
         {
@@ -206,13 +205,7 @@ public class BSP : BoardCreator
                 int distanceBetweenRooms = (int)(Mathf.Pow(c1.tileX - c2.tileX, 2) + Mathf.Pow(c1.tileY - c2.tileY, 2));
                 if(c1.tileX == c2.tileX || c1.tileY == c2.tileY)
                 {
-                    if (straightDistance > distanceBetweenRooms) {
-                        straightDistance = distanceBetweenRooms;
-                        straightConnections.Clear();
-                        straightConnections.Add(new Connection(c1, c2, distanceBetweenRooms));
-                    }
-                    else if (straightDistance == distanceBetweenRooms)
-                        straightConnections.Add(new Connection(c1, c2, distanceBetweenRooms));
+                    straightConnections.Add(new Connection(c1, c2, distanceBetweenRooms));
                 }
                 if (bestDistance > distanceBetweenRooms || bestDistance == -1)
                 {
@@ -224,30 +217,46 @@ public class BSP : BoardCreator
             }
         }
 
-        List<Coord> corridor;
-        if(straightDistance != -1)
-        {
-            connections = straightConnections;
-        }
-        int index = pseudoRandom.Next(0, connections.Count);
-        Connection chosenConnection = connections[index];
-        corridor = CreateCorridor(chosenConnection.connectionTileA, chosenConnection.connectionTileB);
-
         List<Coord> connectedRoom = new List<Coord>();
         connectedRoom.AddRange(roomComplex1.tiles);
         connectedRoom.AddRange(roomComplex2.tiles);
-        connectedRoom.AddRange(corridor);
 
         List<Coord> connectedRoomEdges = new List<Coord>();
         connectedRoomEdges.AddRange(roomComplex1.edgeTiles);
         connectedRoomEdges.AddRange(roomComplex2.edgeTiles);
-        connectedRoomEdges.AddRange(corridor);
 
+        int depth = GetTreeDepth(leaf);
+        int corridorsAmount = pseudoRandom.Next(1 + depth/3, 1 + depth/2);
+        int index = 0;
+        connections.AddRange(straightConnections);
+
+        for (int i = 0; i < corridorsAmount; i++)
+        {
+            if(connections.Count > 0)
+                 index = pseudoRandom.Next(0, connections.Count);
+
+            Connection chosenConnection = connections[index];
+            List<Coord> corridor = CreateCorridor(chosenConnection.connectionTileA, chosenConnection.connectionTileB);
+            connectedRoom.AddRange(corridor);
+            connectedRoomEdges.AddRange(corridor);
+        }
+        
         leaf.area.room = new Room();
         leaf.area.room.tiles = connectedRoom;
         leaf.area.room.edgeTiles = connectedRoomEdges;
 
         return leaf.area.room;
+    }
+
+    private int GetTreeDepth(BSPLeaf leaf)
+    {
+        int depth = 1;
+        while(leaf.child1 != null)
+        {
+            leaf = leaf.child1;
+            depth++;
+        }
+        return depth;
     }
 
     private List<Coord> CreateCorridor(Coord tile1, Coord tile2)
