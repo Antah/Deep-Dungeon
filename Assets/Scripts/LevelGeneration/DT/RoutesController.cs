@@ -23,7 +23,7 @@ public class RoutesController
         }
     }
 
-    public void setUpPrims(List<DTNode> nodes, List<DTEdge> edges, System.Random random)
+    public void setUpPrims(List<DTNode> nodes, List<DTEdge> edges, System.Random random, int additionalConnectionsPercent)
     {
         this.pseudoRandom = random;
 
@@ -82,7 +82,7 @@ public class RoutesController
             }
         }
 
-        int perc = (poolList.Count * 20) / 100;
+        int perc = (poolList.Count * additionalConnectionsPercent) / 100;
 
         for (int i = 0; i < perc; i++)
         {

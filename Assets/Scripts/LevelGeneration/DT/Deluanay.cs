@@ -9,8 +9,15 @@ class Deluanay : BoardCreator
     public string seed;
     public bool useRandomSeed;
 
-    public int minWidth, minHeight, minRoomWidth, minRoomHeight;
-    public int offset;
+    public int numberOfStartingRooms = 60;
+    public int startingRoomGenerationAreaWidth = 20;                                 // The number of columns on the board (how wide it will be).
+    public int startingRoomGenerationAreaHeight = 20;
+
+    public int widthLow = 5, widthHigh = 15, heightLow = 5, heightHigh = 15;
+    public int minWidth = 9, minHeight = 9;
+    public Boolean alternativeMinCheck = true;
+    [Range(0, 100)]
+    public int additionalConnectionsPercent = 20;
 
     int[,] map;
 
@@ -29,6 +36,8 @@ class Deluanay : BoardCreator
     private DTriangulation DTHeart = new DTriangulation();
     private RoutesController router = new RoutesController();
 
+    private float start, midpoint, end;
+
     public override void SetupScene(int level)
     {
         this.level = level;
@@ -46,6 +55,7 @@ class Deluanay : BoardCreator
         // Create the board holder.
         boardHolder = new GameObject("BoardHolder");
 
+        start = Time.realtimeSinceStartup;
         GenerateMap();
 
         Vector3 playerPos = new Vector3(0, 0, 0);
@@ -63,22 +73,22 @@ class Deluanay : BoardCreator
         }
         pseudoRandom = new System.Random(seed.GetHashCode());
         cellsHolder = new GameObject("CellsHolder");
-        for (int i = 0; i < 60; i++)
+        for (int i = 0; i < numberOfStartingRooms; i++)
         {
             GameObject aCell = (GameObject)Instantiate(Resources.Load("Cell"));
             bool xEven = false, yEven = false;
-            int xScale = pseudoRandom.Next(5, 15);
-            int yScale = pseudoRandom.Next(5, 15);
+            int xScale = pseudoRandom.Next(widthLow, widthHigh);
+            int yScale = pseudoRandom.Next(heightLow, heightHigh);
 
             if (xScale % 2 == 0) { xEven = true; }
             if (yScale % 2 == 0) { yEven = true; }
 
             aCell.transform.localScale = new Vector3(xScale, yScale, aCell.transform.localScale.z);
 
-            int xPos = pseudoRandom.Next(0, 20);
-            int yPos = pseudoRandom.Next(0, 20);
+            int xPos = pseudoRandom.Next(0, startingRoomGenerationAreaWidth);
+            int yPos = pseudoRandom.Next(0, startingRoomGenerationAreaHeight);
 
-            aCell.transform.position = new Vector3(-10 + xPos, -10 + yPos, 0);
+            aCell.transform.position = new Vector3(-startingRoomGenerationAreaWidth/2 + xPos, -startingRoomGenerationAreaHeight/2 + yPos, 0);
 
             aCell.GetComponent<Renderer>().material.shader = Shader.Find("Sprites/Default");
             aCell.GetComponent<Renderer>().material.color = new Color(UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f));
@@ -120,9 +130,21 @@ class Deluanay : BoardCreator
         setRooms();
         //initalize the triangulation
         DTHeart.triangulate(roomList, pseudoRandom);
+        //choose edges that get turned into corridors
+        router.setUpPrims(roomList, DTHeart.getTriangulation(), pseudoRandom, additionalConnectionsPercent);
 
-        router.setUpPrims(roomList, DTHeart.getTriangulation(), pseudoRandom);
+        midpoint = Time.realtimeSinceStartup;
+       
+        StartCoroutine(Example());
+        end = Time.realtimeSinceStartup;
+        Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
+    }
 
+    IEnumerator Example()
+    {
+        print(Time.time);
+        yield return new WaitForSeconds(2);
+        print(Time.time);
         InstantiateTiles(roomList, router.getConnections());
     }
 
@@ -273,11 +295,24 @@ class Deluanay : BoardCreator
         foreach (GameObject aCell in cellList)
         {
             aCell.SetActive(false);
-            if ((aCell.transform.localScale.x > 9 && aCell.transform.localScale.y > 5) || (aCell.transform.localScale.x > 5 && aCell.transform.localScale.y > 9))
+
+            if (alternativeMinCheck)
             {
-                aCell.SetActive(true);
-                DTNode tmpRoom = new DTNode(aCell.transform.position.x, aCell.transform.position.y, aCell.gameObject);
-                roomList.Add(tmpRoom);
+                if (aCell.transform.localScale.x > minHeight || aCell.transform.localScale.y > minHeight)
+                {
+                    aCell.SetActive(true);
+                    DTNode tmpRoom = new DTNode(aCell.transform.position.x, aCell.transform.position.y, aCell.gameObject);
+                    roomList.Add(tmpRoom);
+                }
+            }
+            else
+            {
+                if (aCell.transform.localScale.x > minHeight && aCell.transform.localScale.y > minHeight)
+                {
+                    aCell.SetActive(true);
+                    DTNode tmpRoom = new DTNode(aCell.transform.position.x, aCell.transform.position.y, aCell.gameObject);
+                    roomList.Add(tmpRoom);
+                }
             }
 
             Destroy(aCell.GetComponent<Cell>());

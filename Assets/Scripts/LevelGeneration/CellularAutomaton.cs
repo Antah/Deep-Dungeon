@@ -8,6 +8,9 @@ public class CellularAutomaton : BoardCreator
     public string seed;
     public bool useRandomSeed;
 
+    public int columns = 100;                                 // The number of columns on the board (how wide it will be).
+    public int rows = 100;
+
     [Range(0, 100)]
     public int wallsFillPercent;
     [Range(0, 100)]
@@ -51,6 +54,7 @@ public class CellularAutomaton : BoardCreator
  
     private void BoardSetup()
     {
+        float start = Time.realtimeSinceStartup;
         // Create the board holder.
         boardHolder = new GameObject("BoardHolder");
 
@@ -72,14 +76,26 @@ public class CellularAutomaton : BoardCreator
             survivingRooms[0].isAccessibleFromMainRoom = true;
             ConnectClosestRooms(survivingRooms);
         }
-        
-        InstantiateTiles();
+
+        float midpoint = Time.realtimeSinceStartup;
+        StartCoroutine(Example());
 
         Vector3 playerPos = new Vector3(columns/2, rows/2, 0);
         GameManager.instance.GetPlayer().transform.position = playerPos;
         Vector3 exitPos = new Vector3(columns / 2 + 1, rows / 2, 0);
         GameObject tileInstance = Instantiate(exit, exitPos, Quaternion.identity) as GameObject;
         tileInstance.transform.parent = boardHolder.transform;
+
+        float end = Time.realtimeSinceStartup;
+        Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
+    }
+
+    IEnumerator Example()
+    {
+        print(Time.time);
+        yield return new WaitForSeconds(2);
+        print(Time.time);
+        InstantiateTiles();
     }
 
     private void RemoveDeadEnds()

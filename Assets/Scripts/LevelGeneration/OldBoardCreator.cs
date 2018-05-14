@@ -12,6 +12,9 @@ public class OldBoardCreator : BoardCreator
         Wall, Room, Corridor, Empty, Occupied
     }
 
+    public int columns = 100;                                 // The number of columns on the board (how wide it will be).
+    public int rows = 100;
+
     public IntRange numRooms = new IntRange(5, 10);         // The range of the number of rooms there can be.
     public IntRange roomWidth = new IntRange(2, 8);         // The range of widths rooms can have.
     public IntRange roomHeight = new IntRange(2, 8);        // The range of heights rooms can have.
@@ -48,6 +51,7 @@ public class OldBoardCreator : BoardCreator
 
     private void BoardSetup()
     {
+        float start = Time.realtimeSinceStartup;
         // Create the board holder.
         boardHolder = new GameObject("BoardHolder");
 
@@ -63,11 +67,19 @@ public class OldBoardCreator : BoardCreator
         SetTilesValuesForRooms();
         if (corridors != null)
             SetTilesValuesForCorridors();
+        float midpoint = Time.realtimeSinceStartup;
 
-        InstantiateTiles();
-        //InstantiateOuterWalls ();
+        StartCoroutine(Example());
+        float end = Time.realtimeSinceStartup;
+        Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
     }
-
+    IEnumerator Example()
+    {
+        print(Time.time);
+        yield return new WaitForSeconds(2);
+        print(Time.time);
+        InstantiateTiles();
+    }
 
     private void SetupTilesArray()
     {

@@ -6,9 +6,6 @@ using Random = UnityEngine.Random;
 
 public class BoardCreator : MonoBehaviour
 {
-    public int columns = 100;                                 // The number of columns on the board (how wide it will be).
-    public int rows = 100;
-
     protected GameObject boardHolder;                           // GameObject that acts as a container for all other tiles.
     protected int level;
     public virtual void SetupScene(int level)

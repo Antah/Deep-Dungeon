@@ -9,8 +9,14 @@ public class BSP : BoardCreator
     public string seed;
     public bool useRandomSeed;
 
-    public int minWidth, minHeight, minRoomWidth, minRoomHeight;
+    public int columns = 100;                                 // The number of columns on the board (how wide it will be).
+    public int rows = 100;
+
+    public int minAreaWidth, minAreaHeight;
+    public int minRoomWidth, minRoomHeight, maxRoomWidth, maxRoomHeight;
+    public Boolean alternativeMinCheck;
     public int offset;
+    public int maxCorridorLenghtX, maxCorridorLenghtY;
 
     int[,] map;
 
@@ -29,17 +35,33 @@ public class BSP : BoardCreator
 
     private void BoardSetup()
     {
+        float start = Time.realtimeSinceStartup;
         // Create the board holder.
         boardHolder = new GameObject("BoardHolder");
 
         GenerateMap();
-        InstantiateTiles();
+
+        float midpoint = Time.realtimeSinceStartup;
+        StartCoroutine(Example());
+    
+        
 
         Vector3 playerPos = new Vector3(columns / 2, rows / 2, 0);
         GameManager.instance.GetPlayer().transform.position = playerPos;
         Vector3 exitPos = new Vector3(columns / 2 + 1, rows / 2, 0);
         GameObject tileInstance = Instantiate(exit, exitPos, Quaternion.identity) as GameObject;
         tileInstance.transform.parent = boardHolder.transform;
+
+        float end = Time.realtimeSinceStartup;
+        Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
+    }
+
+    IEnumerator Example()
+    {
+        print(Time.time);
+        yield return new WaitForSeconds(2);
+        print(Time.time);
+        InstantiateTiles();
     }
 
     private void GenerateMap()
@@ -89,9 +111,9 @@ public class BSP : BoardCreator
         int h = node.area.height;
         int division; //1 means vertical, 0 means horizontal
 
-        if (w < minWidth)
+        if (w < minAreaWidth)
         {
-            if (h < minHeight)
+            if (h < minAreaHeight)
             {
                 CreateRoom(node);
                 return;
@@ -99,7 +121,7 @@ public class BSP : BoardCreator
             else
                 division = 0;
         }
-        else if (h < minHeight)
+        else if (h < minAreaHeight)
         {
             division = 1;
         }
@@ -145,24 +167,54 @@ public class BSP : BoardCreator
         DivideArea(newLeaf2);
     }
 
-    private void CreateRoom(BSPNode node) { 
+    private void CreateRoom(BSPNode node) {
         int roomWidth;
         int roomHeight;
-    
-        if(node.area.width < minRoomWidth)
+        int maxWidth, maxHeight;
+
+        if (alternativeMinCheck)
+        {
+            if (node.area.width < minRoomWidth && node.area.height < minRoomHeight)
+            {
+                node = null;
+                return;
+            }
+        }
+        else
+        {
+            if (node.area.width < minRoomWidth || node.area.height < minRoomHeight)
+            {
+                node = null;
+                return;
+            }
+        }
+
+
+        if (maxRoomWidth > node.area.width)
+            maxWidth = node.area.width;
+        else
+            maxWidth = maxRoomWidth;
+        if (maxRoomHeight > node.area.height)
+            maxHeight = node.area.height;
+        else
+            maxHeight = maxRoomHeight;
+
+
+        if (node.area.width < minRoomWidth)
             roomWidth = node.area.width;
         else
-            roomWidth = pseudoRandom.Next(minRoomWidth, node.area.width + 1);
+            roomWidth = pseudoRandom.Next(minRoomWidth, maxWidth + 1);
         if (node.area.height < minRoomHeight)
             roomHeight = node.area.height;
         else
-            roomHeight = pseudoRandom.Next(minRoomHeight, node.area.height + 1);
+            roomHeight = pseudoRandom.Next(minRoomHeight, maxHeight + 1);
 
         int coordX = node.area.btmLeft.tileX + pseudoRandom.Next(0, node.area.width +1 - roomWidth);
         int coordY = node.area.btmLeft.tileY + pseudoRandom.Next(0, node.area.height +1 - roomHeight);
 
         BSPRoom newRoom = new BSPRoom(new Coord(coordX, coordY), roomWidth, roomHeight);
         node.area.rooms.Add(newRoom);
+        DrawRooms(node.area.rooms);
     }
 
     private void DrawRooms(List<BSPRoom> rooms)
@@ -198,62 +250,70 @@ public class BSP : BoardCreator
     {
         if (leaf.child1 == null && leaf.child2 == null)
             return leaf.area.rooms;
+        if (leaf.child1 == null)
+        {
+            List<BSPRoom> roomComplex = Connect(leaf.child2);
+            leaf.area.rooms.AddRange(roomComplex);
+            return leaf.area.rooms;
+        }
+
+        if (leaf.child2 == null)
+        {
+            List<BSPRoom> roomComplex = Connect(leaf.child1);
+            leaf.area.rooms.AddRange(roomComplex);
+            return leaf.area.rooms;
+        }
 
         List<BSPRoom> roomComplex1 = Connect(leaf.child1);
         List<BSPRoom> roomComplex2 = Connect(leaf.child2);
 
-        List<List<Connection>> connectionsList = new List<List<Connection>>();
+        leaf.area.rooms.AddRange(roomComplex1);
+        leaf.area.rooms.AddRange(roomComplex2);
+
+        List<Connection> connectionsList = new List<Connection>();
         int bestDistance = -1;
 
         foreach(BSPRoom room1 in roomComplex1)
         {
-            List<Connection> connectionsBetweenRooms = new List<Connection>();
+            Connection connectionBetweenRooms = null;
             foreach(BSPRoom room2 in roomComplex2)
             {
                 int tmpBest;
-                List < Connection > tmpList = GetBestConnections(room1, room2, out tmpBest);
-                if (tmpBest < bestDistance || bestDistance == -1)
+                Connection tmpConnection = GetBestConnection(room1, room2, out tmpBest);
+
+                if (tmpBest != -1 && (tmpBest < bestDistance || bestDistance == -1))
                 {
                     bestDistance = tmpBest;
-                    connectionsBetweenRooms = tmpList;
+                    connectionBetweenRooms = tmpConnection;
                 }
-                else if (tmpBest == bestDistance)
-                    connectionsBetweenRooms.AddRange(tmpList);
-
             }
-            if(bestDistance != -1)
-                connectionsList.Add(connectionsBetweenRooms);
+
+            if(connectionBetweenRooms != null)
+                connectionsList.Add(connectionBetweenRooms);
             bestDistance = -1;
         }
 
-        leaf.area.rooms.AddRange(roomComplex1);
-        leaf.area.rooms.AddRange(roomComplex2);
-
         int depth = GetTreeDepth(leaf);
         int connectionsAmount = pseudoRandom.Next(1 + depth/3, 1 + depth/2);
-        int index = 0;
 
         for (int i = 0; i < connectionsAmount; i++)
         {
             if (connectionsList.Count == 0)
                 break;
 
-            index = pseudoRandom.Next(0, connectionsList.Count);
-            List<Connection> chosenConnection = connectionsList[index];
-
-            index = pseudoRandom.Next(0, chosenConnection.Count);
-            Connection connection = chosenConnection[index];
+            int index = pseudoRandom.Next(0, connectionsList.Count);
+            Connection connection = connectionsList[index];
 
             List<Coord> corridor = CreateConnectionRoom(connection);
             leaf.area.rooms.Add(new BSPRoom(corridor));
 
-            connectionsList.Remove(chosenConnection);
+            connectionsList.Remove(connection);
         }
         
         return leaf.area.rooms;
     }
 
-    private List<Connection> GetBestConnections(BSPRoom room1, BSPRoom room2, out int bestDistance)
+    private Connection GetBestConnection(BSPRoom room1, BSPRoom room2, out int bestDistance)
     {
         List<Connection> connectionsBetweenRooms = new List<Connection>();
         bestDistance = -1;
@@ -262,7 +322,11 @@ public class BSP : BoardCreator
         {
             foreach (Coord c2 in room2.edgeTiles)
             {
+                if (Math.Abs(c1.tileX - c2.tileX) > maxCorridorLenghtX || Math.Abs(c1.tileY - c2.tileY) > maxCorridorLenghtY)
+                    continue;
+
                 int distanceBetweenRooms = (int)(Mathf.Pow(c1.tileX - c2.tileX, 2) + Mathf.Pow(c1.tileY - c2.tileY, 2));
+
                 if (bestDistance > distanceBetweenRooms || bestDistance == -1)
                 {
                     bestDistance = distanceBetweenRooms;
@@ -274,14 +338,21 @@ public class BSP : BoardCreator
             }
         }
 
-        return connectionsBetweenRooms;
+        if (bestDistance != -1)
+        {
+            int index = pseudoRandom.Next(0, connectionsBetweenRooms.Count);
+            Connection connection = connectionsBetweenRooms[index];
+            return connection;
+        }
+
+        return null;
     }
 
     private int GetTreeDepth(BSPNode leaf)
     {
         int depth = 1;
 
-        if (leaf.child1 == null)
+        if (leaf.child1 == null || leaf.child2 == null)
             return depth;
 
         int depth1 = GetTreeDepth(leaf.child1);
