@@ -47,7 +47,7 @@ public class GameManager : MonoBehaviour {
                 boardScript = GetComponent<OldBoardCreator>();
                 break;
             case GeneratorType.CellularAutomaton:
-                boardScript = GetComponent<CellularAutomaton>();
+                boardScript = GetComponent<CABoardCreator>();
                 break;
             case GeneratorType.BSP:
                 boardScript = GetComponent<BSP>();
