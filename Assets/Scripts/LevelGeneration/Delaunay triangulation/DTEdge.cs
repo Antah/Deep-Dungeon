@@ -4,37 +4,35 @@
 public class DTEdge
 {
 
-    private DTNode node1;
-    private DTNode node2;
+    private DTNode nodeA;
+    private DTNode nodeB;
 
     private Color theDrawColor = new Color(255, 0, 0, 1);
     private LineRenderer theLine;
 
-    public DTEdge(DTNode _n0, DTNode _n1)
+    public DTEdge(DTNode nodeA, DTNode nodeB)
     {
-        node1 = _n0;
-        node2 = _n1;
+        this.nodeA = nodeA;
+        this.nodeB = nodeB;
         theLine = new GameObject().AddComponent<LineRenderer>();
-        theLine.material = new Material(Shader.Find("Particles/Additive"));
-        theLine.name = "EdgeLine";
+        theLine.name = "Edge";
         theLine.tag = "Line";
-        //theLine.renderer.material.color = theDrawColor;
     }
 
-    public DTNode getNode1()
+    public DTNode getNodeA()
     {
-        return node1;
+        return nodeA;
     }
 
-    public DTNode getNode2()
+    public DTNode getNodeB()
     {
-        return node2;
+        return nodeB;
     }
 
-    public bool checkSame(DTEdge _aEdge)
+    public bool checkSame(DTEdge otherEdge)
     {
-        if ((node1 == _aEdge.getNode1() || node1 == _aEdge.getNode2()) &&
-              (node2 == _aEdge.getNode1() || node2 == _aEdge.getNode2()))
+        if ((nodeA == otherEdge.getNodeA() || nodeA == otherEdge.getNodeB()) &&
+              (nodeB == otherEdge.getNodeA() || nodeB == otherEdge.getNodeB()))
         {
             return true;
         }
@@ -42,9 +40,9 @@ public class DTEdge
         return false;
     }
 
-    public bool edgeContainsVertex(DTNode _aNode)
+    public bool containsNode(DTNode _aNode)
     {
-        if (node1 == _aNode || node2 == _aNode)
+        if (nodeA == _aNode || nodeB == _aNode)
         {
             return true;
         }
@@ -54,13 +52,12 @@ public class DTEdge
 
     public void drawEdge(string name = "")
     {
-        if (node1.getParentCell() != null && node2.getParentCell() != null)
+        if (nodeA.getParentRoom() != null && nodeB.getParentRoom() != null)
         {
             if (theLine == null)
             {
                 theLine = new GameObject().AddComponent<LineRenderer>();
                 theLine.name = "EdgeLine";
-                theLine.material = new Material(Shader.Find("Particles/Additive"));
                 theLine.tag = "Line";
             }
             if (name != "")
@@ -77,27 +74,24 @@ public class DTEdge
                     theLine.startColor = new Color(40, 255, 0, 1);
                     theLine.endColor = new Color(40, 255, 0, 1);
                     Debug.Log(theLine.name);
-                    Debug.Log(node1.getNodePosition().x + " " + node1.getNodePosition().y);
-                    Debug.Log(node2.getNodePosition().x + " " + node2.getNodePosition().y);
+                    Debug.Log(nodeA.getNodePosition().x + " " + nodeA.getNodePosition().y);
+                    Debug.Log(nodeB.getNodePosition().x + " " + nodeB.getNodePosition().y);
                 }
-                theLine.material = new Material(Shader.Find("Particles/Additive"));
             }
-            theLine.SetWidth(0.7f, 0.7f);
+            theLine.startWidth = 0.7f;
+            theLine.endWidth = 0.7f;
             //theLine.renderer.material.color = theDrawColor;
-            theLine.SetColors(theDrawColor, theDrawColor);
-            theLine.SetVertexCount(2);
-            theLine.SetPosition(0, new Vector3(node1.getNodePosition().x, node1.getNodePosition().y, -3));
-            theLine.SetPosition(1, new Vector3(node2.getNodePosition().x, node2.getNodePosition().y, -3));
+            theLine.startColor = theDrawColor;
+            theLine.endColor = theDrawColor;
+            theLine.positionCount = 2;
+            theLine.SetPosition(0, new Vector3(nodeA.getNodePosition().x, nodeA.getNodePosition().y, -3));
+            theLine.SetPosition(1, new Vector3(nodeB.getNodePosition().x, nodeB.getNodePosition().y, -3));
         }
     }
 
     public void setDrawColor(Color _theColor)
     {
         theDrawColor = new Color(_theColor.r, _theColor.g, _theColor.b, 1);
-        if (theLine != null)
-        {
-            theLine.material = new Material(Shader.Find("Particles/Additive"));
-        }
     }
 
     public void stopDraw()

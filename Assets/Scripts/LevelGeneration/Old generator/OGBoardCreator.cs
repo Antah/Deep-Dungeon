@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
 
-public class OldBoardCreator : BoardCreator
+public class OGBoardCreator : LevelGenerator
 {
     // The type of tile that will be laid in a specific position.
     public enum TileType
@@ -71,14 +71,17 @@ public class OldBoardCreator : BoardCreator
 
         StartCoroutine(Example());
         float end = Time.realtimeSinceStartup;
-        Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
+        //Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
+        //TestLogger.AddLine(level + "\t" + (midpoint - start) + "\t" + (end - start));
     }
     IEnumerator Example()
     {
         print(Time.time);
-        yield return new WaitForSeconds(2);
+        yield return new WaitForSeconds(0);
         print(Time.time);
         InstantiateTiles();
+        Vector3 playerPos = new Vector3(columns / 2, rows / 2, 0);
+        GameManager.instance.GetPlayer().transform.position = playerPos;
     }
 
     private void SetupTilesArray()
@@ -126,7 +129,7 @@ public class OldBoardCreator : BoardCreator
             corridors[0] = new OGCorridor();
             corridors[0].SetupCorridor(rooms[0], corridorLength, roomWidth, roomHeight, columns, rows, true);
         }
-
+        /*
         if (startingRoom == 1)
         {
             Vector3 playerPos = new Vector3(rooms[0].xPos, rooms[0].yPos, 0);
@@ -143,7 +146,7 @@ public class OldBoardCreator : BoardCreator
             GameObject tileInstance = Instantiate(exit, exitPos, Quaternion.identity) as GameObject;
             tileInstance.transform.parent = boardHolder.transform;
         }
-
+        */
 
         for (int i = 1; i < rooms.Length; i++)
         {
@@ -162,7 +165,7 @@ public class OldBoardCreator : BoardCreator
                 // Setup the corridor based on the room that was just created.
                 corridors[i].SetupCorridor(rooms[i], corridorLength, roomWidth, roomHeight, columns, rows, false);
             }
-
+            /*
             if (i == startingRoom - 1)
             {
                 Vector3 playerPos = new Vector3(rooms[i].xPos, rooms[i].yPos, 0);
@@ -170,7 +173,7 @@ public class OldBoardCreator : BoardCreator
                     playerPos = new Vector3(rooms[i].xPos, rooms[i].yPos + 1, 0);
                 GameManager.instance.GetPlayer().transform.position = playerPos;
             }
-
+            
             if (i == exitRoom - 1)
             {
                 Vector3 exitPos = new Vector3(rooms[i].xPos, rooms[i].yPos, 0);
@@ -178,7 +181,7 @@ public class OldBoardCreator : BoardCreator
                     exitPos = new Vector3(rooms[i].xPos + 1, rooms[i].yPos, 0);
                 GameObject tileInstance = Instantiate(exit, exitPos, Quaternion.identity) as GameObject;
                 tileInstance.transform.parent = boardHolder.transform;
-            }
+            }*/
         }
     }
 
@@ -424,7 +427,7 @@ public class OldBoardCreator : BoardCreator
         {
             if (hitColliders[i].name == "Player" || hitColliders[i].name == "Exit")
                 return false;
-            DestroyObject(hitColliders[i].gameObject);
+            Destroy(hitColliders[i].gameObject);
         }
         return true;
     }

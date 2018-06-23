@@ -3,13 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System;
 
 public class GameManager : MonoBehaviour {
 
 	public float levelStartDelay = 2f;
 	public float turnDelay;
 	public static GameManager instance = null;
-    public BoardCreator boardScript;
+    public LevelGenerator boardScript;
     public GeneratorType generatorType;
     public int playerHealth;
 	public Text foodText = null;
@@ -27,46 +28,51 @@ public class GameManager : MonoBehaviour {
 
     public enum GeneratorType
     {
-        RoomsAndCorridors, CellularAutomaton, BSP, DelunayTriangulation
+        Simple, CellularAutomaton, BinaryTree, DelunayTriangulation
     }
 
     void Awake () {
 		if (instance == null)
 			instance = this;
 		else if (instance != this)
-			DestroyObject (gameObject);
+			Destroy (gameObject);
 
 		DontDestroyOnLoad (gameObject);
 
 		turnDelay = 0.2f;
 		enemies = new List<Enemy> ();
 
-        switch (generatorType)
-        {
-            case GeneratorType.RoomsAndCorridors:
-                boardScript = GetComponent<OldBoardCreator>();
-                break;
-            case GeneratorType.CellularAutomaton:
-                boardScript = GetComponent<CABoardCreator>();
-                break;
-            case GeneratorType.BSP:
-                boardScript = GetComponent<BSP>();
-                break;
-            case GeneratorType.DelunayTriangulation:
-                boardScript = GetComponent<Deluanay>();
-                break;
-        }
-            
+        TestLogger.CreateFile();
 
-		SceneManager.sceneLoaded += delegate (Scene scene, LoadSceneMode mode)
+        SceneManager.sceneLoaded += delegate (Scene scene, LoadSceneMode mode)
 		{
-			level++;
+            UpdateGeneratorType();
+            level++;
 			InitGame();
 			playersTurn = true;
 		};
 	}
 
-	void InitGame(){
+    public void UpdateGeneratorType()
+    {
+        switch (generatorType)
+        {
+            case GeneratorType.Simple:
+                boardScript = GetComponent<OGBoardCreator>();
+                break;
+            case GeneratorType.CellularAutomaton:
+                boardScript = GetComponent<CALevelGenerator>();
+                break;
+            case GeneratorType.BinaryTree:
+                boardScript = GetComponent<BTLevelGenerator>();
+                break;
+            case GeneratorType.DelunayTriangulation:
+                boardScript = GetComponent<DTLevelGenerator>();
+                break;
+        }
+    }
+
+    void InitGame(){
 		if (!gameInProgress)
 			return;
 		doingSetup = true;
@@ -129,7 +135,7 @@ public class GameManager : MonoBehaviour {
 	}
 
 	public void NextLevel(){
-		SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
+        SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
 	}
 
 	public Player GetPlayer(){
@@ -139,4 +145,26 @@ public class GameManager : MonoBehaviour {
 	public void SetLifeText(int text){
 		foodText.text = "Life: " + text;
 	}
+
+    public void SetLevelGenerator(String gt)
+    {
+        switch (gt)
+        {
+            case "ca":
+                generatorType = GameManager.GeneratorType.CellularAutomaton;
+                break;
+            case "bt":
+                generatorType = GameManager.GeneratorType.BinaryTree;
+                break;
+            case "dt":
+                generatorType = GameManager.GeneratorType.DelunayTriangulation;
+                break;
+            case "sim":
+                generatorType = GameManager.GeneratorType.Simple;
+                break;
+            default:
+                generatorType = GameManager.GeneratorType.DelunayTriangulation;
+                break;
+        }
+    }
 }

@@ -4,119 +4,119 @@ using System.Collections.Generic;
 using System;
 
 //Triangulation implementation
-public class DTriangulation
+public class DelaunayTriangulation
 {
 
     //All the triangles in the triangulation
     private List<DTTriangle> triangleList = new List<DTTriangle>();
 
     //Verticies that still need to be added to the triangulations
-    private List<DTNode> toAddList = new List<DTNode>();
+    private List<DTNode> nodesToAddList = new List<DTNode>();
 
     //the current verticie that is being added to the triangulation
     private DTNode nextNode = null;
 
     //Edges that have become possibly unDelaunay due to the insertion of another verticie
-    private List<DTEdge> dirtyEdges = new List<DTEdge>();
+    private List<DTEdge> edgesToCheck = new List<DTEdge>();
 
     //the omega triangle created at start of triangulation
-    private DTTriangle rootTriangle;
+    private DTTriangle bigTriangle;
 
     //the triangle the "nextNode" is inside of
     private DTTriangle inTriangle;
 
-    private List<DTEdge> finalTriangulation = new List<DTEdge>();
+    private List<DTEdge> finalEdgesList = new List<DTEdge>();
     private System.Random pseudoRandom;
 
     //construvtor
-    public DTriangulation()
+    public DelaunayTriangulation()
     {
 
     }
 
     //Handles set up of triangulation
-    public void setupTriangulation(List<DTNode> _roomList)
+    public void SetupTriangulation(List<DTNode> roomList)
     {
 
         //puts all verticies into the toDo list
-        foreach (DTNode aNode in _roomList)
+        foreach (DTNode n in roomList)
         {
-            toAddList.Add(aNode);
+            nodesToAddList.Add(n);
         }
 
         //creates three artificial verticies for the omega triangle
-        DTNode node0 = new DTNode(0, 250, null);
+        DTNode nodeA = new DTNode(0, 250, null);
 
-        DTNode node1 = new DTNode(-250, -200, null);
+        DTNode nodeB = new DTNode(-250, -200, null);
 
-        DTNode node2 = new DTNode(250, -200, null);
+        DTNode nodeC = new DTNode(250, -200, null);
 
         //creates the omega triangle
-        rootTriangle = new DTTriangle(new DTEdge(node0, node1), new DTEdge(node0, node2), new DTEdge(node1, node2));
+        bigTriangle = new DTTriangle(new DTEdge(nodeA, nodeB), new DTEdge(nodeA, nodeC), new DTEdge(nodeB, nodeC));
 
         //adds the omega triangle to the triangle list
-        triangleList.Add(rootTriangle);
+        triangleList.Add(bigTriangle);
     }
 
 
-    internal void triangulate(List<DTNode> roomList, System.Random random)
+    internal void Triangulate(List<DTNode> roomList, System.Random random)
     {
         this.pseudoRandom = random;
-        setupTriangulation(roomList);
+        SetupTriangulation(roomList);
 
-        while (toAddList.Count > 0)
+        while (nodesToAddList.Count > 0)
         {
-            addVertexToTriangulation();
+            AddVertexToTriangulation();
         }
 
         
         //drawTriangles();
-        constructFinal();
+        ConstructFinalEdgeList();
     }
 
     //Adds a verticies to the triangulation
-    private void addVertexToTriangulation()
+    private void AddVertexToTriangulation()
     {
         //Find a Random verticie from the todo list
-        int choice = pseudoRandom.Next(0, toAddList.Count);
+        int choice = pseudoRandom.Next(0, nodesToAddList.Count);
 
         //set next node to selected verticies
-        nextNode = toAddList[choice];
+        nextNode = nodesToAddList[choice];
 
         //remove selected verticies from todo list
-        toAddList.Remove(nextNode);
+        nodesToAddList.Remove(nextNode);
 
         //stores triangles created during the loop to be appended to main list after loop
         List<DTTriangle> tempTriList = new List<DTTriangle>();
 
         //All edges are clean at this point. Remove any that may be left over from previous loop
-        dirtyEdges.Clear();
+        edgesToCheck.Clear();
 
         float count = -1;
         foreach (DTTriangle aTri in triangleList)
         {
-            List<DTEdge> triEdges = aTri.getEdges();
+            List<DTEdge> triEdges = aTri.GetEdges();
             count++;
             //Find which triangle the current vertex being add is located within
-            if (LineIntersector.PointInTraingle(nextNode.getNodePosition(), triEdges[0].getNode1().getNodePosition(),
-                triEdges[0].getNode2().getNodePosition(), triEdges[1].getNode2().getNodePosition()))
+            if (LineIntersection.PointInTraingle(nextNode.getNodePosition(), triEdges[0].getNodeA().getNodePosition(),
+                triEdges[0].getNodeB().getNodePosition(), triEdges[1].getNodeB().getNodePosition()))
             {
 
                 //cache the triangle we are in so we can delete it after loop
                 inTriangle = aTri;
 
                 //create three new triangles from each edge of the triangle vertex is in to the new vertex
-                foreach (DTEdge aEdge in aTri.getEdges())
+                foreach (DTEdge aEdge in aTri.GetEdges())
                 {
-                    DTTriangle nTri1 = new DTTriangle(new DTEdge(nextNode, aEdge.getNode1()),
-                                    new DTEdge(nextNode, aEdge.getNode2()),
-                                    new DTEdge(aEdge.getNode2(), aEdge.getNode1()));
+                    DTTriangle nTri1 = new DTTriangle(new DTEdge(nextNode, aEdge.getNodeA()),
+                                    new DTEdge(nextNode, aEdge.getNodeB()),
+                                    new DTEdge(aEdge.getNodeB(), aEdge.getNodeA()));
 
                     //cache created triangles so we can add to list after loop
                     tempTriList.Add(nTri1);
 
                     //mark the edges of the old triangle as dirty
-                    dirtyEdges.Add(new DTEdge(aEdge.getNode1(), aEdge.getNode2()));
+                    edgesToCheck.Add(new DTEdge(aEdge.getNodeA(), aEdge.getNodeB()));
 
                 }
 
@@ -134,28 +134,28 @@ public class DTriangulation
         if (inTriangle != null)
         {
             triangleList.Remove(inTriangle);
-            inTriangle.stopDraw();
+            inTriangle.StopDraw();
             inTriangle = null;
         }
 
-        checkEdges(dirtyEdges);
+        CheckEdges(edgesToCheck);
 
     }
 
-    private void checkEdges(List<DTEdge> _list)
+    private void CheckEdges(List<DTEdge> edgesList)
     {
         //the current dirty edge
-        if (_list.Count == 0)
+        if (edgesList.Count == 0)
         {
-            if (toAddList.Count > 0)
+            if (nodesToAddList.Count > 0)
             {
-                addVertexToTriangulation();
+                AddVertexToTriangulation();
             }
             return;
         }
 
         //get the next edge in the dirty list
-        DTEdge currentEdge = _list[0];
+        DTEdge currentEdge = edgesList[0];
 
         DTTriangle[] connectedTris = new DTTriangle[2];
         int index = 0;
@@ -163,7 +163,7 @@ public class DTriangulation
 
         foreach (DTTriangle aTri in triangleList)
         {
-            if (aTri.checkTriangleContainsEdge(currentEdge))
+            if (aTri.ContainsEdge(currentEdge))
             {
                 connectedTris[index] = aTri;
                 index++;
@@ -181,18 +181,18 @@ public class DTriangulation
             //loop through the connected triangles and there edges. Checking for a vertex that isnt in the edge
             for (int i = 0; i < connectedTris.Length; i++)
             {
-                foreach (DTEdge aEdge in connectedTris[i].getEdges())
+                foreach (DTEdge aEdge in connectedTris[i].GetEdges())
                 {
-                    if (!currentEdge.edgeContainsVertex(aEdge.getNode1()))
+                    if (!currentEdge.containsNode(aEdge.getNodeA()))
                     {
-                        uniqueNodes[index1] = aEdge.getNode1();
+                        uniqueNodes[index1] = aEdge.getNodeA();
                         index1++;
                         break;
                     }
 
-                    if (!currentEdge.edgeContainsVertex(aEdge.getNode2()))
+                    if (!currentEdge.containsNode(aEdge.getNodeB()))
                     {
-                        uniqueNodes[index1] = aEdge.getNode2();
+                        uniqueNodes[index1] = aEdge.getNodeB();
                         index1++;
                         break;
                     }
@@ -201,13 +201,13 @@ public class DTriangulation
 
 
             //find the angles of the two unique verticies
-            float angle0 = calculateVertexAngle(uniqueNodes[0].getNodePosition(),
-                                                currentEdge.getNode1().getNodePosition(),
-                                                currentEdge.getNode2().getNodePosition());
+            float angle0 = CalculateVertexAngle(uniqueNodes[0].getNodePosition(),
+                                                currentEdge.getNodeA().getNodePosition(),
+                                                currentEdge.getNodeB().getNodePosition());
 
-            float angle1 = calculateVertexAngle(uniqueNodes[1].getNodePosition(),
-                                                currentEdge.getNode1().getNodePosition(),
-                                                currentEdge.getNode2().getNodePosition());
+            float angle1 = CalculateVertexAngle(uniqueNodes[1].getNodePosition(),
+                                                currentEdge.getNodeA().getNodePosition(),
+                                                currentEdge.getNodeB().getNodePosition());
 
             //Check if the target Edge needs flipping
             if (angle0 + angle1 > 180)
@@ -223,8 +223,8 @@ public class DTriangulation
                 DTNode sharedNode1;
 
                 //set the shared nodes on the shared edge
-                sharedNode0 = currentEdge.getNode1();
-                sharedNode1 = currentEdge.getNode2();
+                sharedNode0 = currentEdge.getNodeA();
+                sharedNode1 = currentEdge.getNodeB();
 
                 //construct a new triangle to update old triangle after flip
                 firstTriEdges[0] = new DTEdge(uniqueNodes[0], sharedNode0);
@@ -237,34 +237,34 @@ public class DTriangulation
                 secondTriEdges[2] = flippedEdge;
 
                 //update the edges of the triangles involved in the flip
-                connectedTris[0].setEdges(firstTriEdges[0], firstTriEdges[1], firstTriEdges[2]);
-                connectedTris[1].setEdges(secondTriEdges[0], secondTriEdges[1], secondTriEdges[2]);
+                connectedTris[0].SetEdges(firstTriEdges[0], firstTriEdges[1], firstTriEdges[2]);
+                connectedTris[1].SetEdges(secondTriEdges[0], secondTriEdges[1], secondTriEdges[2]);
 
 
                 //Adds all edges to be potentially dirty. This is bad and should only add the edges that *could* be dirty
-                foreach (DTEdge eEdge in connectedTris[0].getEdges())
+                foreach (DTEdge eEdge in connectedTris[0].GetEdges())
                 {
-                    _list.Add(eEdge);
+                    edgesList.Add(eEdge);
                 }
 
-                foreach (DTEdge eEdge in connectedTris[1].getEdges())
+                foreach (DTEdge eEdge in connectedTris[1].GetEdges())
                 {
-                    _list.Add(eEdge);
+                    edgesList.Add(eEdge);
                 }
 
                 //also add new edge to dirty list
-                _list.Add(flippedEdge);
+                edgesList.Add(flippedEdge);
             }
         }
 
         //remove the current edge from the dirty list
-        _list.Remove(currentEdge);
+        edgesList.Remove(currentEdge);
 
-        checkEdges(_list);
+        CheckEdges(edgesList);
     }
 
     //calculates the angle at vertex _target in triangle (_target _shared0 _shared1) in degrees
-    private float calculateVertexAngle(Vector2 _target, Vector2 _shared0, Vector2 _shared1)
+    private float CalculateVertexAngle(Vector2 _target, Vector2 _shared0, Vector2 _shared1)
     {
         float length0 = Vector2.Distance(_target, _shared0);
         float length1 = Vector2.Distance(_shared0, _shared1);
@@ -275,7 +275,7 @@ public class DTriangulation
 
     public void drawTriangles()
     {
-        foreach (DTEdge e in finalTriangulation)
+        foreach (DTEdge e in finalEdgesList)
         {
             e.drawEdge("final tri");
         }
@@ -283,18 +283,18 @@ public class DTriangulation
 
 
     //Construct a list of all the edges actually in the triangulation
-    private void constructFinal()
+    private void ConstructFinalEdgeList()
     {
         foreach (DTTriangle aTriangle in triangleList)
         {
-            foreach (DTEdge aEdge in aTriangle.getEdges())
+            foreach (DTEdge aEdge in aTriangle.GetEdges())
             {
                 //stop edges connecting to the omega triangle to be added to the final list
-                if (aEdge.getNode1().getParentCell() != null && aEdge.getNode2().getParentCell() != null)
+                if (aEdge.getNodeA().getParentRoom() != null && aEdge.getNodeB().getParentRoom() != null)
                 {
                     bool tmp = true;
                     
-                    foreach(DTEdge aEdge2 in finalTriangulation)
+                    foreach(DTEdge aEdge2 in finalEdgesList)
                     {
                         if (aEdge.checkSame(aEdge2))
                         {
@@ -303,15 +303,15 @@ public class DTriangulation
                     }
                     
                     if(tmp)
-                        finalTriangulation.Add(aEdge);
+                        finalEdgesList.Add(aEdge);
                 }
                 aEdge.stopDraw();
             }
         }
     }
 
-    public List<DTEdge> getTriangulation()
+    public List<DTEdge> GetTriangulation()
     {
-        return finalTriangulation;
+        return finalEdgesList;
     }
 }

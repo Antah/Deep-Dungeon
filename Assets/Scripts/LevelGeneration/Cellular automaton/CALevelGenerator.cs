@@ -3,7 +3,7 @@ using System.Collections;
 using System;
 using System.Collections.Generic;
 
-public class CABoardCreator : BoardCreator
+public class CALevelGenerator : LevelGenerator
 {
     public string seed;
     public bool useRandomSeed;
@@ -43,16 +43,22 @@ public class CABoardCreator : BoardCreator
 
     int[,] map;
     private System.Random pseudoRandom;
+    private int roomCount;
+    private float st, mt, et;
 
     public override void SetupScene(int level)
     {
         this.level = level;
-        BoardSetup();
+        CreateLevel();
+        st = mt = et = 0;
     }
  
-    private void BoardSetup()
+    private void CreateLevel()
     {
-        //float start = Time.realtimeSinceStartup;
+        roomCount = 0;
+        
+        st = Time.realtimeSinceStartup;
+
         boardHolder = new GameObject("BoardHolder");
 
         GenerateMap();
@@ -67,27 +73,12 @@ public class CABoardCreator : BoardCreator
             survivingRooms[0].isAccessibleFromMainRoom = true;
             ConnectRooms(survivingRooms);
         }
+        mt = Time.realtimeSinceStartup;
 
-        //float midpoint = Time.realtimeSinceStartup;
-        //StartCoroutine(DelayedInitialisation());
         InstantiateTiles();
 
-        Vector3 playerPos = new Vector3(columns/2, rows/2, 0);
-        GameManager.instance.GetPlayer().transform.position = playerPos;
-        Vector3 exitPos = new Vector3(columns / 2 + 1, rows / 2, 0);
-        GameObject tileInstance = Instantiate(exit, exitPos, Quaternion.identity) as GameObject;
-        tileInstance.transform.parent = boardHolder.transform;
-
-        //float end = Time.realtimeSinceStartup;
-        //Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
-    }
-
-    IEnumerator DelayedInitialisation()
-    {
-        print(Time.time);
-        yield return new WaitForSeconds(2);
-        print(Time.time);
-        InstantiateTiles();
+        //Debug.Log("Test number: " + level + " - rooms: " + roomCount + " - generation: " + (mt - st) + " - visualization: " + (et - st));
+        //TestLogger.AddLine(level + "\t" + roomCount + "\t" + (mt - st) + "\t" + (et - st));
     }
 
     private void InstantiateTiles()
@@ -96,16 +87,21 @@ public class CABoardCreator : BoardCreator
         {
             for (int j = 0; j < rows; j++)
             {
-                if (map[i, j] == 0)
-                {
-                    InstantiateFromArray(floorTiles, i, j);
-                }
-                else
+                if (map[i, j] == 1)
                 {
                     InstantiateFromArray(wallTiles, i, j);
                 }
+                else
+                {
+                    InstantiateFromArray(floorTiles, i, j);
+                }
             }
         }
+
+        Vector3 playerPos = new Vector3(columns / 2, rows / 2, 0);
+        GameManager.instance.GetPlayer().transform.position = playerPos;
+
+        et = Time.realtimeSinceStartup;
     }
 
     void GenerateMap()
@@ -118,7 +114,7 @@ public class CABoardCreator : BoardCreator
 
         RandomFillMap();
 
-        Ruleset ruleset = new Ruleset(neighbourhoodType, surviveMin, surviveMax, newMin, newMax);
+        CARuleset ruleset = new CARuleset(neighbourhoodType, surviveMin, surviveMax, newMin, newMax);
         for (int i = 0; i < smoothingIterations; i++)
         {
             SmoothMap(ruleset);
@@ -126,7 +122,7 @@ public class CABoardCreator : BoardCreator
 
         if (hybridMode)
         {
-            Ruleset ruleset2 = new Ruleset(neighbourhoodTypeHybrid, surviveMinHybrid, surviveMaxHybrid, newMinHybrid, newMaxHybrid);
+            CARuleset ruleset2 = new CARuleset(neighbourhoodTypeHybrid, surviveMinHybrid, surviveMaxHybrid, newMinHybrid, newMaxHybrid);
             for (int i = 0; i < smoothingIterationsHybrid; i++)
             {
                 SmoothMap(ruleset2);
@@ -137,14 +133,14 @@ public class CABoardCreator : BoardCreator
     {
         RandomFillArea(area);
 
-        Ruleset ruleset = new Ruleset(neighbourhoodType, surviveMin, surviveMax, newMin, newMax);
+        CARuleset ruleset = new CARuleset(neighbourhoodType, surviveMin, surviveMax, newMin, newMax);
         for (int i = 0; i < smoothingIterations; i++)
         {
             SmoothArea(ruleset, area);
         }
         if (hybridMode)
         {
-            Ruleset ruleset2 = new Ruleset(neighbourhoodTypeHybrid, surviveMinHybrid, surviveMaxHybrid, newMinHybrid, newMaxHybrid);
+            CARuleset ruleset2 = new CARuleset(neighbourhoodTypeHybrid, surviveMinHybrid, surviveMaxHybrid, newMinHybrid, newMaxHybrid);
             for (int i = 0; i < smoothingIterationsHybrid; i++)
             {
                 SmoothArea(ruleset2, area);
@@ -225,7 +221,7 @@ public class CABoardCreator : BoardCreator
         map = borderedMap;
     }
 
-    void SmoothMap(Ruleset ruleset)
+    void SmoothMap(CARuleset ruleset)
     {
         int[,] tmpMap = new int[map.GetLength(0), map.GetLength(1)];
         for (int x = 0; x < columns; x++)
@@ -254,7 +250,7 @@ public class CABoardCreator : BoardCreator
         }
         map = tmpMap;
     }
-    void SmoothArea(Ruleset ruleset, List<Tile> area)
+    void SmoothArea(CARuleset ruleset, List<Tile> area)
     {
         int[,] tmpMap = new int[map.GetLength(0), map.GetLength(1)];
         for (int x = 0; x < columns; x++)
@@ -333,8 +329,10 @@ public class CABoardCreator : BoardCreator
             }
         }
 
+        roomCount = survivingRooms.Count;
         return survivingRooms;
     }
+
     List<CARoom> OptimizeRoomsInArea(List<Tile> area)
     {
         List<List<Tile>> wallRegions = GetRegionsInArea(1, area);
@@ -391,6 +389,7 @@ public class CABoardCreator : BoardCreator
 
         return regions;
     }
+
     List<List<Tile>> GetRegions(int tileType)
     {
         List<List<Tile>> regions = new List<List<Tile>>();
@@ -415,6 +414,7 @@ public class CABoardCreator : BoardCreator
 
         return regions;
     }
+
     List<Tile> GetRegionTiles(int startX, int startY)
     {
         List<Tile> tiles = new List<Tile>();
@@ -448,6 +448,7 @@ public class CABoardCreator : BoardCreator
 
         return tiles;
     }
+
     bool IsInMapRange(int x, int y)
     {
         return x >= 0 && x < columns && y >= 0 && y < rows;
@@ -494,6 +495,7 @@ public class CABoardCreator : BoardCreator
 
         ConnectRoomsToMain(allRooms);
     }
+
     private void ConnectRoomsToMain(List<CARoom> allRooms)
     {
         List<CARoom> roomListA = new List<CARoom>();
@@ -538,6 +540,7 @@ public class CABoardCreator : BoardCreator
             }
         }
     }
+
     private CAConnection GetBestConnection(CARoom room1, CARoom room2, bool forceAccessibilityFromMainRoom, out int bestDistance)
     {
         List<CAConnection> connectionsBetweenRooms = new List<CAConnection>();
@@ -605,6 +608,7 @@ public class CABoardCreator : BoardCreator
         CARoom.ConnectRooms(roomA, roomB);
         return true;
     }
+
     bool CreateStraightCorridor(CARoom roomA, CARoom roomB, Tile tileA, Tile tileB, bool dontCross = false)
     {
         List<Tile> passage = new List<Tile>() ;
@@ -708,6 +712,7 @@ public class CABoardCreator : BoardCreator
 
         return 8 - wallCount;
     }
+
     int NeumanNeighbourhood(int gridX, int gridY)
     {
         int wallCount = 0;
@@ -734,30 +739,7 @@ public class CABoardCreator : BoardCreator
 
         return 4 - wallCount;
     }
-    public enum NeighbourhoodType
-    {
-        Moore, Neuman
-    }
 
-    public enum ConnectionType
-    {
-        straight, direct
-    }
-
-    class Ruleset
-    {
-        public NeighbourhoodType neighbourhoodType;
-        public int survMin, survMax, newMin, newMax;
-        public Ruleset(NeighbourhoodType nt, int survMin, int survMax, int newMin, int newMax)
-        {
-            this.neighbourhoodType = nt;
-            this.survMin = survMin;
-            this.survMax = survMax;
-            this.newMin = newMin;
-            this.newMax = newMax;
-        }
-
-    }
 
     void printMap(int[,] mapToPrint, String name)
     {

@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-//Main flow controller
-class Deluanay : BoardCreator
+
+class DTLevelGenerator : LevelGenerator
 {
     public string seed;
     public bool useRandomSeed;
@@ -27,42 +27,35 @@ class Deluanay : BoardCreator
     public GameObject exit;
 
     private System.Random pseudoRandom;
-    private ArrayList cellList = new ArrayList();
+    private ArrayList startingRoomsList = new ArrayList();
     private bool initializationStarted = false;
     private bool initilizationFinished = false;
     private bool DTFinished = false;
     private GameObject cellsHolder;
     private List<DTNode> roomList = new List<DTNode>();
-    private DTriangulation DTHeart = new DTriangulation();
-    private RoutesController router = new RoutesController();
+    private DelaunayTriangulation traingulationScript = new DelaunayTriangulation();
+    private DTMinSpanningTree treeScript = new DTMinSpanningTree();
 
-    private float start, midpoint, end;
+    private float st, it1, it2, mt, et;
 
     public override void SetupScene(int level)
     {
         this.level = level;
         initilizationFinished = false;
         initializationStarted = false;
-        cellList.Clear();
+        startingRoomsList.Clear();
         roomList.Clear();
-        DTHeart = new DTriangulation();
-        router = new RoutesController();
-        BoardSetup();
+        traingulationScript = new DelaunayTriangulation();
+        treeScript = new DTMinSpanningTree();
+        CreateLevel();
     }
 
-    private void BoardSetup()
+    private void CreateLevel()
     {
-        // Create the board holder.
+        st = Time.realtimeSinceStartup;
+
         boardHolder = new GameObject("BoardHolder");
-
-        start = Time.realtimeSinceStartup;
         GenerateMap();
-
-        Vector3 playerPos = new Vector3(0, 0, 0);
-        GameManager.instance.GetPlayer().transform.position = playerPos;
-        Vector3 exitPos = new Vector3(0, 1, 0);
-        GameObject tileInstance = Instantiate(exit, exitPos, Quaternion.identity) as GameObject;
-        tileInstance.transform.parent = boardHolder.transform;
     }
 
     private void GenerateMap()
@@ -75,7 +68,7 @@ class Deluanay : BoardCreator
         cellsHolder = new GameObject("CellsHolder");
         for (int i = 0; i < numberOfStartingRooms; i++)
         {
-            GameObject aCell = (GameObject)Instantiate(Resources.Load("Cell"));
+            GameObject roomRectangle = (GameObject)Instantiate(Resources.Load("RoomRectangle"));
             bool xEven = false, yEven = false;
             int xScale = pseudoRandom.Next(widthLow, widthHigh);
             int yScale = pseudoRandom.Next(heightLow, heightHigh);
@@ -83,22 +76,23 @@ class Deluanay : BoardCreator
             if (xScale % 2 == 0) { xEven = true; }
             if (yScale % 2 == 0) { yEven = true; }
 
-            aCell.transform.localScale = new Vector3(xScale, yScale, aCell.transform.localScale.z);
+            roomRectangle.transform.localScale = new Vector3(xScale, yScale, roomRectangle.transform.localScale.z);
 
             int xPos = pseudoRandom.Next(0, startingRoomGenerationAreaWidth);
             int yPos = pseudoRandom.Next(0, startingRoomGenerationAreaHeight);
 
-            aCell.transform.position = new Vector3(-startingRoomGenerationAreaWidth/2 + xPos, -startingRoomGenerationAreaHeight/2 + yPos, 0);
+            roomRectangle.transform.position = new Vector3(-startingRoomGenerationAreaWidth/2 + xPos, -startingRoomGenerationAreaHeight/2 + yPos, 0);
 
-            aCell.GetComponent<Renderer>().material.shader = Shader.Find("Sprites/Default");
-            aCell.GetComponent<Renderer>().material.color = new Color(UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f));
+            roomRectangle.GetComponent<Renderer>().material.shader = Shader.Find("Sprites/Default");
+            roomRectangle.GetComponent<Renderer>().material.color = new Color(UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f));
             
-            aCell.GetComponent<Cell>().setup(xEven, yEven);
+            roomRectangle.GetComponent<DTRoomRectangle>().Setup(xEven, yEven);
             
-            cellList.Add(aCell);
-            aCell.transform.SetParent(cellsHolder.transform);
+            startingRoomsList.Add(roomRectangle);
+            roomRectangle.transform.SetParent(cellsHolder.transform);
         }
         initializationStarted = true;
+        it1 = Time.realtimeSinceStartup;
     }
 
     // Update is called once per frame
@@ -111,7 +105,7 @@ class Deluanay : BoardCreator
 
         if (initializationStarted)
         {
-            if (cellsStill())
+            if (CellsStill())
             {
                 initializationStarted = false;
                 initilizationFinished = true;
@@ -120,32 +114,28 @@ class Deluanay : BoardCreator
         else if (initilizationFinished)
         {
             initilizationFinished = false;
-            continueGeneration();
+            ContinueGeneration();
         }
     }
 
-    private void continueGeneration()
+    private void ContinueGeneration()
     {
+        it2 = Time.realtimeSinceStartup;
         //turn large cells into rooms;
-        setRooms();
+        ChooseLargeRooms();
+
         //initalize the triangulation
-        DTHeart.triangulate(roomList, pseudoRandom);
+        traingulationScript.Triangulate(roomList, pseudoRandom);
+
         //choose edges that get turned into corridors
-        router.setUpPrims(roomList, DTHeart.getTriangulation(), pseudoRandom, additionalConnectionsPercent);
+        treeScript.ChooseConnectionsFromEdges(roomList, traingulationScript.GetTriangulation(), pseudoRandom, additionalConnectionsPercent);
+        mt = Time.realtimeSinceStartup;
 
-        midpoint = Time.realtimeSinceStartup;
-       
-        StartCoroutine(Example());
-        end = Time.realtimeSinceStartup;
-        Debug.Log("Finish time: " + (midpoint - start) + "\nWith initialization: " + (end - start));
-    }
+        InstantiateTiles(roomList, treeScript.getConnections());
+        et = Time.realtimeSinceStartup;
 
-    IEnumerator Example()
-    {
-        print(Time.time);
-        yield return new WaitForSeconds(2);
-        print(Time.time);
-        InstantiateTiles(roomList, router.getConnections());
+        //Debug.Log("Test number: " + level + " - rooms: " + roomList.Count + "//" + numberOfStartingRooms + " - separation: " + (it2 - it1) + " - generation: " + (it1 - st + mt - it2) + " - visualzation: " + (et - mt));
+        //TestLogger.AddLine(level + "\t" + roomList.Count + "\t" + numberOfStartingRooms + "\t" + (it2 - it1) + "\t" + (it1 - st + mt - it2) + "\t" + (et - mt));
     }
 
     private void InstantiateTiles(List<DTNode> rooms, List<DTEdge> connections)
@@ -160,13 +150,16 @@ class Deluanay : BoardCreator
         {
             DrawConnection(c);
         }
+
+
+        Vector3 playerPos = new Vector3(0, 0, 0);
+        GameManager.instance.GetPlayer().transform.position = playerPos;
     }
 
     private void DrawConnection(DTEdge c)
     {
-        DTNode room1 = c.getNode1();
-        DTNode room2 = c.getNode2();
-        List<Coord> connection = new List<Coord>();
+        DTNode room1 = c.getNodeA();
+        DTNode room2 = c.getNodeB();
 
         Vector2 pos = new Vector2((float)Math.Round(room1.getNodePosition().x), (float)Math.Round(room1.getNodePosition().y));
 
@@ -229,10 +222,10 @@ class Deluanay : BoardCreator
 
     private void DrawRoom(DTNode r)
     {
-        int iMin = (int)(r.getNodePosition().x - r.getParentCell().transform.localScale.x / 2 + 0.5f);
-        int iMax = (int)(r.getNodePosition().x + r.getParentCell().transform.localScale.x / 2 + 0.5f);
-        int jMin = (int)(r.getNodePosition().y - r.getParentCell().transform.localScale.y / 2 + 0.5f);
-        int jMax = (int)(r.getNodePosition().y + r.getParentCell().transform.localScale.y / 2 + 0.5f);
+        int iMin = (int)(r.getNodePosition().x - r.getParentRoom().transform.localScale.x / 2 + 0.5f);
+        int iMax = (int)(r.getNodePosition().x + r.getParentRoom().transform.localScale.x / 2 + 0.5f);
+        int jMin = (int)(r.getNodePosition().y - r.getParentRoom().transform.localScale.y / 2 + 0.5f);
+        int jMax = (int)(r.getNodePosition().y + r.getParentRoom().transform.localScale.y / 2 + 0.5f);
 
         for (int i = iMin; i < iMax; i++)
         {
@@ -274,13 +267,13 @@ class Deluanay : BoardCreator
     }
 
     //returns if all the cells have stopped moving or not
-    private bool cellsStill()
+    private bool CellsStill()
     {
 
         bool placed = true;
-        foreach (GameObject aCell in cellList)
+        foreach (GameObject aCell in startingRoomsList)
         {
-            if (!aCell.GetComponent<Cell>().getHasStopped())
+            if (!aCell.GetComponent<DTRoomRectangle>().GetHasStopped())
             {
                 placed = false;
             }
@@ -290,46 +283,46 @@ class Deluanay : BoardCreator
     }
 
     //handles choosing which cells to turn to rooms
-    private void setRooms()
+    private void ChooseLargeRooms()
     {
-        foreach (GameObject aCell in cellList)
+        foreach (GameObject sr in startingRoomsList)
         {
-            aCell.SetActive(false);
+            sr.SetActive(false);
 
             if (alternativeMinCheck)
             {
-                if (aCell.transform.localScale.x > minHeight || aCell.transform.localScale.y > minHeight)
+                if (sr.transform.localScale.x > minHeight || sr.transform.localScale.y > minHeight)
                 {
-                    aCell.SetActive(true);
-                    DTNode tmpRoom = new DTNode(aCell.transform.position.x, aCell.transform.position.y, aCell.gameObject);
+                    sr.SetActive(true);
+                    DTNode tmpRoom = new DTNode(sr.transform.position.x, sr.transform.position.y, sr.gameObject);
                     roomList.Add(tmpRoom);
                 }
             }
             else
             {
-                if (aCell.transform.localScale.x > minHeight && aCell.transform.localScale.y > minHeight)
+                if (sr.transform.localScale.x > minHeight && sr.transform.localScale.y > minHeight)
                 {
-                    aCell.SetActive(true);
-                    DTNode tmpRoom = new DTNode(aCell.transform.position.x, aCell.transform.position.y, aCell.gameObject);
+                    sr.SetActive(true);
+                    DTNode tmpRoom = new DTNode(sr.transform.position.x, sr.transform.position.y, sr.gameObject);
                     roomList.Add(tmpRoom);
                 }
             }
 
-            Destroy(aCell.GetComponent<Cell>());
+            Destroy(sr.GetComponent<DTRoomRectangle>());
         }
     }
 
     private void InstantiateTiles()
     {
-        foreach (GameObject c in cellList)
+        foreach (GameObject c in startingRoomsList)
         {
-            if (c.GetComponent<Cell>() != null)
+            if (c.GetComponent<DTRoomRectangle>() != null)
             {
                 Debug.Log(c.transform.position.x + " " + c.transform.localScale.x);
 
                 Debug.Log(c.transform.localScale.x + " " + (int)(c.transform.position.x - c.transform.localScale.x / 2) + " " + (int)(c.transform.position.x + c.transform.localScale.x / 2));
 
-                Vector2 mySize = new Vector2(c.GetComponent<Renderer>().bounds.size.x, c.GetComponent<Renderer>().bounds.size.y);
+                //Vector2 mySize = new Vector2(c.GetComponent<Renderer>().bounds.size.x, c.GetComponent<Renderer>().bounds.size.y);
                 for (int i = (int)(c.transform.position.x - c.transform.localScale.x / 2 + 0.5f); i < (int)(c.transform.position.x + c.transform.localScale.x / 2 + 0.5f); i++)
                 {
                     for (int j = (int)(c.transform.position.y - c.transform.localScale.y / 2 + 0.5f); j < (int)(c.transform.position.y + c.transform.localScale.y / 2 + 0.5f); j++)
@@ -338,18 +331,6 @@ class Deluanay : BoardCreator
                     }
                 }
             }
-        }
-    }
-
-    struct Coord
-    {
-        public int tileX;
-        public int tileY;
-
-        public Coord(int x, int y)
-        {
-            tileX = x;
-            tileY = y;
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 
-//A class to check some intersections and collisions between some shapes and points
-public static class LineIntersector
+public static class LineIntersection
 {
 
     //Code retrieved from: http://forum.unity3d.com/threads/17384-Line-Intersection 

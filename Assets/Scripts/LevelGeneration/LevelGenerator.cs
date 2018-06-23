@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
 
-public class BoardCreator : MonoBehaviour
+public class LevelGenerator : MonoBehaviour
 {
     protected GameObject boardHolder;                           // GameObject that acts as a container for all other tiles.
     protected int level;
