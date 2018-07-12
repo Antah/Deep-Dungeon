@@ -41,6 +41,8 @@ class DTLevelGenerator : LevelGenerator
     public override void SetupScene(int level)
     {
         this.level = level;
+        SetupParameters();
+
         initilizationFinished = false;
         initializationStarted = false;
         startingRoomsList.Clear();
@@ -48,6 +50,28 @@ class DTLevelGenerator : LevelGenerator
         traingulationScript = new DelaunayTriangulation();
         treeScript = new DTMinSpanningTree();
         CreateLevel();
+    }
+
+    private void SetupParameters()
+    {
+        DTSettings settings = UIDTSettings.instance.GetSettings();
+
+        seed = settings.seed;
+        useRandomSeed = settings.useRandomSeed;
+
+        numberOfStartingRooms = settings.initialRooms;
+        startingRoomGenerationAreaWidth = settings.initialAreaWidth;
+        startingRoomGenerationAreaHeight = settings.initialAreaHeight;
+        widthLow = settings.initialRoomMinWidth;
+        heightLow = settings.initialRoomMinHeight;
+        widthHigh = settings.initialRoomMaxWidth;
+        heightHigh = settings.initialRoomMaxHeight;
+
+        minWidth = settings.minRoomWidth;
+        minHeight = settings.minRoomHeight;
+        alternativeMinCheck = settings.useOrCheck;
+
+        additionalConnectionsPercent = settings.additionalConnections;
     }
 
     private void CreateLevel()

@@ -4,8 +4,14 @@ using UnityEngine.SceneManagement;
 
 public class Loader : MonoBehaviour {
 	public AudioClip doorSound;
-	public GameObject gameManager;
+	public GameManager gameManager;
 	public SoundManager soundManager;
+    public UIBaseInterface baseUI;
+    public UIBTSettings btUI;
+    public UICASettings caUI;
+    public UIDTSettings dtUI;
+    public UISGSettings sgUI;
+
     public GameObject boardManager;
     public GameManager.GeneratorType generator = GameManager.GeneratorType.DelunayTriangulation;
 
@@ -13,7 +19,7 @@ public class Loader : MonoBehaviour {
 		if (GameManager.instance == null)
 			Instantiate (gameManager);
 		if (SoundManager.instance == null)
-			Instantiate (soundManager);    
+			Instantiate (soundManager);
     }
 
 	public void EnterGame(){
@@ -21,30 +27,6 @@ public class Loader : MonoBehaviour {
 		GameManager.instance.level = 0;
         GameManager.instance.gameInProgress = true;
 		SceneManager.LoadScene ("Main");
-	}
-
-    public void SetLevelGenerator(String gt)
-    {
-        switch (gt)
-        {
-            case "ca":
-                generator = GameManager.GeneratorType.CellularAutomaton;
-                break;
-            case "bt":
-                generator = GameManager.GeneratorType.BinaryTree;
-                break;
-            case "dt":
-                generator = GameManager.GeneratorType.DelunayTriangulation;
-                break;
-            case "sim":
-                generator = GameManager.GeneratorType.Simple;
-                break;
-            default:
-                generator = GameManager.GeneratorType.DelunayTriangulation;
-                break;
-        }
-
-        GameManager.instance.generatorType = generator;
     }
 
 	public void ExitGame(){

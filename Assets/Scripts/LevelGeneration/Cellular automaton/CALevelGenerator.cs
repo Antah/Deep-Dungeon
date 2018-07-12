@@ -49,10 +49,53 @@ public class CALevelGenerator : LevelGenerator
     public override void SetupScene(int level)
     {
         this.level = level;
+        SetupParameters();
         CreateLevel();
         st = mt = et = 0;
     }
- 
+
+    private void SetupParameters()
+    {
+        CASettings settings = UICASettings.instance.GetSettings();
+
+        seed = settings.seed;
+        useRandomSeed = settings.useRandomSeed;
+
+        columns = settings.levelWidth;
+        rows = settings.levelHeight;
+        wallsFillPercent = settings.wallFill;
+
+        smoothingIterations = settings.iterations1;
+        neighbourhoodType = settings.ruleset1.neighbourhoodType;
+        surviveMin = settings.ruleset1.survMin;
+        surviveMax = settings.ruleset1.survMax;
+        newMin = settings.ruleset1.newMin;
+        newMax = settings.ruleset1.newMax;
+
+        hybridMode = settings.enableSecondRuleset;
+        smoothingIterationsHybrid = settings.iterations1;
+        neighbourhoodTypeHybrid = settings.ruleset2.neighbourhoodType;
+        surviveMinHybrid = settings.ruleset2.survMin;
+        surviveMaxHybrid = settings.ruleset2.survMax;
+        newMinHybrid = settings.ruleset2.newMin;
+        newMaxHybrid = settings.ruleset2.newMax;
+
+        roomThreshold = settings.minRoomSize;
+        roomUpperThreshold = settings.maxRoomSize;
+        wallThreshold = settings.minWallSize;
+        wallUpperThreshold = settings.maxWallSize;
+
+        connectRooms = settings.enableConnections;
+        if (settings.useDirectConnections)
+            connectionType = ConnectionType.direct;
+        else
+            connectionType = ConnectionType.straight;
+        connectionUpperThreshold = settings.maxLeavingConnections;
+        connectionSizeFactor = settings.connectionSizeFactor;
+        maxCorridorLengthX = settings.maxConnectionLengthX;
+        maxCorridorLengthY = settings.maxConnectionLengthY;
+    }
+
     private void CreateLevel()
     {
         roomCount = 0;

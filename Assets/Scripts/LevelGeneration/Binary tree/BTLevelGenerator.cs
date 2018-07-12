@@ -16,7 +16,7 @@ public class BTLevelGenerator : LevelGenerator
     public int minRoomWidth, minRoomHeight, maxRoomWidth, maxRoomHeight;
     public Boolean alternativeMinCheck;
     public int offset;
-    public int maxCorridorLenghtX, maxCorridorLenghtY;
+    public int maxCorridorLengthX, maxCorridorLengthY;
 
     int[,] map;
 
@@ -32,7 +32,32 @@ public class BTLevelGenerator : LevelGenerator
     public override void SetupScene(int level)
     {
         this.level = level;
+        SetupParameters();
         CreateLevel();
+    }
+
+    private void SetupParameters()
+    {
+        BTSettings settings = UIBTSettings.instance.GetSettings();
+
+        seed = settings.seed;
+        useRandomSeed = settings.useRandomSeed;
+
+        columns = settings.levelWidth;
+        rows = settings.levelHeight;
+
+        minAreaWidth = settings.minAreaWidth;
+        minAreaHeight = settings.minAreaHeight;
+        offset = settings.separationOffset;
+
+        minRoomWidth = settings.minRoomWidth;
+        minRoomHeight = settings.minRoomHeight;
+        maxRoomWidth = settings.maxRoomWidth;
+        maxRoomHeight = settings.maxRoomHeight;
+        alternativeMinCheck = settings.useOrCheck;
+
+        maxCorridorLengthX = settings.maxConnectionLengthX;
+        maxCorridorLengthY = settings.maxConnectionLengthY;
     }
 
     private void CreateLevel()
@@ -323,7 +348,7 @@ public class BTLevelGenerator : LevelGenerator
         {
             foreach (Tile t2 in room2.edgeTiles)
             {
-                if (Math.Abs(t1.tileX - t2.tileX) > maxCorridorLenghtX || Math.Abs(t1.tileY - t2.tileY) > maxCorridorLenghtY)
+                if (Math.Abs(t1.tileX - t2.tileX) > maxCorridorLengthX || Math.Abs(t1.tileY - t2.tileY) > maxCorridorLengthY)
                     continue;
 
                 int distanceBetweenRooms = (int)(Mathf.Pow(t1.tileX - t2.tileX, 2) + Mathf.Pow(t1.tileY - t2.tileY, 2));

@@ -46,7 +46,20 @@ public class OGBoardCreator : LevelGenerator
     public override void SetupScene(int level)
     {
         this.level = level;
+        SetupParameters();
         BoardSetup();
+    }
+
+    private void SetupParameters()
+    {
+        SGSettings settings = UISGSettings.instance.GetSettings();
+
+        columns = settings.levelWidth;
+        rows = settings.levelHeight;
+        numRooms = new IntRange(settings.roomNumberMin, settings.roomNumberMax);
+        roomWidth = new IntRange(settings.roomWidthMin, settings.roomWidthMax);
+        roomHeight = new IntRange(settings.roomHeightMin, settings.roomHeightMax);
+        corridorLength = new IntRange(settings.connectionLengthMin, settings.connectionLengthMax);
     }
 
     private void BoardSetup()

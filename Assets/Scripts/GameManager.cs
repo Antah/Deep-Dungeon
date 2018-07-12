@@ -93,7 +93,8 @@ public class GameManager : MonoBehaviour {
 	private void HideLevelImage(){
 		levelImage.SetActive (false);
 		doingSetup = false;
-	}
+        UIBaseInterface.instance.SetupUI();
+    }
 
 	public void GameOver(){
 		GameManager.instance.gameInProgress = false;
@@ -136,7 +137,7 @@ public class GameManager : MonoBehaviour {
 
 	public void NextLevel(){
         SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
-	}
+    }
 
 	public Player GetPlayer(){
 		return player;
@@ -159,7 +160,7 @@ public class GameManager : MonoBehaviour {
             case "dt":
                 generatorType = GameManager.GeneratorType.DelunayTriangulation;
                 break;
-            case "sim":
+            case "sg":
                 generatorType = GameManager.GeneratorType.Simple;
                 break;
             default:
